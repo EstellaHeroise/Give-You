@@ -1,0 +1,104 @@
+# Changelog / 更新日志
+
+本项目所有重要变更都会记录在此文件中，遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（语义化版本）。
+
+All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [v0.4] - 2026-10-30
+
+### 新增 / Added
+
+- 🚀 **开机提醒**：设备每次开机自动触发一次价格检查（Windows「启动」文件夹 + VBS 静默运行）
+  - Startup reminder: auto-run a price check on every boot (Windows Startup folder + silent VBS).
+  - `python deepseek_price_alert.py --setup-startup` 启用
+  - `python deepseek_price_alert.py --remove-startup` 取消
+- ⏰ **每日定时提醒**：用户设定固定时间，每天到点自动检查一次价格（Windows 任务计划程序）
+  - Daily scheduled reminder via Windows Task Scheduler.
+  - `python deepseek_price_alert.py --setup-schedule 09:30` 启用（时间可自定义）
+  - `python deepseek_price_alert.py --remove-schedule` 取消
+- 🔔 **提醒方式选择**：通过 `config.json` 的 `reminder_channel` 字段选择
+  - Reminder channel: `popup`（仅弹窗，默认）/ `popup_sound`（弹窗 + 系统提示音）。
+- 📋 **状态查看**：`--status` 一键显示开机提醒、每日定时提醒、当前提醒方式是否已启用
+  - Status command: check startup / daily reminder / reminder channel at a glance.
+- 🧩 **开机提醒与每日定时提醒相互独立**，可分别开关、互不影响
+  - Startup reminder and daily reminder are fully independent.
+
+### 说明 / Notes
+
+- 定时任务通过 Windows 任务计划程序（schtasks）创建，为跨平台通用实现预留了接口；macOS / Linux 用户可用系统自带的 launchd / cron 实现同样的效果。
+
+---
+
+## [v0.3] - 2026-10-30
+
+### 新增 / Added
+
+- 💰 **价格显示单位可自选**（`--unit` 配置，通过 `config.json` 的 `price_unit` 字段）
+  - User-selectable price display unit.
+  - `auto`：自动同时显示美元与人民币（默认，如 `$0.6/1M = ¥0.0426/万token`）
+  - `usd_per_1m`：官方美元口径 `$X/1M`
+  - `cny_per_10k`：人民币 / 万token（直观感受"一分钱一万token"）
+  - `cny_per_1m`：人民币 / 百万token（官方口径）
+- 🎨 `style_picker.html` 新增「④ 价格显示单位」选择区，带实时预览，保存时一并写入 `config.json`
+  - Style picker gains a price-unit selector with live preview.
+
+### 内部实现 / Internal
+
+- 新增换算函数 `to_cny_per_10k(usd_per_1m, rate)`：`usd / 100 * rate`
+- 新增 `format_price_for_display(price, unit, rate)` 统一格式化输出
+
+---
+
+## [v0.2] - 2026-10-30
+
+### 新增 / Added
+
+- 💱 **均价双口径显示**：同时展示 `$ / 1M tokens`（官方口径）与 `¥ / 万token`（直观口径）
+  - Dual-currency price display: USD per 1M tokens + CNY per 10K tokens.
+- 🔥 **大额优惠重点提醒**：降幅 ≥50% **或** 折算价达到 `¥0.01/万token`（一分钱级）时，自动加 🔥 重点标记
+  - Big-deal highlight: drop ≥50% or penny-level price (≤¥0.01/10K tokens) gets a 🔥 mark.
+- 📢 **官方公告监控**：自动抓取 DeepSeek 官方 `/updates` 公告列表，发现降价 / 优惠 / 新模型公告立即提醒
+  - Official `/updates` announcements monitoring.
+- 🎨 **风格预览与选择**：
+  - `style_preview.html`：纯预览页，一次性展示全部 12 种风格（通知弹窗 / 终端输出 / 窗口主题 三组 × 4 款），通知弹窗同时预览「系统原生弹窗」与「自定义风格弹窗」
+  - `style_picker.html`：交互选择页，点击卡片选择风格，保存时下载 `config.json`，主脚本自动应用
+
+### 变更 / Changed
+
+- 提醒弹窗文案升级：包含模型名、价格变化、降幅百分比
+- 终端输出支持 4 种风格（`log` / `table` / `color` / `compact`）
+
+---
+
+## [v0.1] - 2026-10-30
+
+### 初始版本 / Initial release
+
+- 🎯 **核心功能**：零第三方依赖的 Python 脚本，监控 DeepSeek 官方 API 定价页（`api-docs.deepseek.com/quick_start/pricing`）
+  - Zero-dependency Python script monitoring the official DeepSeek pricing page.
+- 🔔 **降价自动提醒**：检测到价格下降立即弹窗通知 + 写入日志
+  - Desktop notification + log on price drop.
+- 📜 **价格历史记录**：`price_history.json` 保存价格快照，`monitor.log` 记录运行日志
+  - Local price history and run logs.
+- 💻 **命令行接口**：`--init`（建立基线）、`--once`（检查一次）、`--history`（查看历史）
+  - CLI: `--init` / `--once` / `--history`.
+- 🌍 **跨平台通知**：Windows（`MessageBoxW`）、macOS（`osascript`）、Linux（`notify-send`）
+  - Cross-platform native notifications.
+- 📄 **开源化准备**：`README.md`（中英双语）、`LICENSE`（MIT）、`.gitignore`
+  - Open-source ready: bilingual README, MIT license, .gitignore.
+
+---
+
+## 🔮 后续计划 / Planned
+
+- [ ] 推送 GitHub 开源（替换 README / LICENSE 中的 `<YOUR_GITHUB_USERNAME>`）
+- [ ] Server酱 / 微信 / 邮件 / Bark 等更多通知渠道
+- [ ] 限时活动页（非定价页）的降价监控
+- [ ] GUI 版本（将 `style_preview.html` 中预览的自定义弹窗风格落地为真实弹窗）
+
+---
+
+*本文件会随每次功能更新持续追加记录。*
+*This file is maintained with every release.*
