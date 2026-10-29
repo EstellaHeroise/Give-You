@@ -3,9 +3,10 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
-# 运行时生成的文件（价格历史与日志，不应提交）
+# 运行时生成的文件（价格历史、日志、风格配置，不应提交）
 price_history.json
 monitor.log
+config.json
 
 # 编辑器 / OS
 .vscode/
