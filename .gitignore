@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 运行时生成的文件（价格历史与日志，不应提交）
+price_history.json
+monitor.log
+
+# 编辑器 / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 虚拟环境
+.venv/
+venv/
+env/
