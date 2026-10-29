@@ -12,15 +12,17 @@ A zero-dependency, cross-platform alert tool for DeepSeek official API price dro
 ## ✨ 特性 / Features
 
 - 🎯 **只监控 DeepSeek 官方 API 定价**（`api-docs.deepseek.com/quick_start/pricing`），不是第三方转售平台
-- 🔔 **降价自动弹窗提醒**（Windows / macOS / Linux 原生通知，无需任何第三方库）
+- 🔔 **降价自动弹窗提醒**（Windows / macOS / Linux 原生通知，无需任何第三方库），可选弹窗+系统提示音
+- 🚀 **开机提醒**：设备每次开机自动检查一次价格，有降价才提醒
+- ⏰ **每日定时提醒**：设定固定时间，每天到点自动检查一次价格
 - 💰 **价格单位可自选**：`$ / 1M tokens`（官方口径）、`¥ / 万token`（直观感受"一分钱一万token"）、`¥ / 百万token`，或自动同时显示两种
 - 🔥 **大额优惠重点提醒**：降幅 ≥50% **或** 价格达到 `¥0.01/万token`（一分钱级）时，自动用 🔥 重点标记
 - 📢 **官方公告监控**：自动监控 DeepSeek 官方 `/updates` 公告列表，发现降价/优惠/新模型公告立即提醒
-- 🎨 **风格预览与选择**：提供 `style_preview.html`（纯预览）和 `style_picker.html`（点击选择并保存到 `config.json`），支持通知弹窗 / 终端输出 / 窗口主题三组风格 + 价格单位
+- 🎨 **风格预览与选择**：提供 `style_preview.html`（纯预览）和 `style_picker.html`（点击选择并保存到 `config.json`），支持通知弹窗 / 终端输出 / 窗口主题三组风格 + 价格单位 + 提醒方式
 - 📜 **价格历史自动记录**（`price_history.json`），涨价也会记录（仅日志，不弹窗）
 - 🐍 **纯 Python 标准库，零依赖** —— clone 下来就能跑，不用 `pip install` 任何东西
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
-- 💻 **命令行友好**：`--init`、`--once`、`--history`
+- 💻 **命令行友好**：`--init`、`--once`、`--history`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--remove-schedule`、`--status`
 
 ---
 
@@ -121,27 +123,56 @@ python deepseek_price_alert.py --history
 
 ---
 
-## ⏰ 定时自动检查 / Schedule it
+## ⏰ 开机提醒 + 每日定时提醒 / Startup & Daily Reminder
 
-手动运行只是第一步。要真正"每天自动提醒"，请用系统自带的任务计划程序：
+脚本内置了两种自动提醒功能，相互独立、可分别开关：
 
-### Windows（任务计划程序 / Task Scheduler）
+### 🚀 开机提醒 / Startup reminder
 
-1. 打开「任务计划程序」（Win+R 输入 `taskschd.msc`）
-2. 创建基本任务 → 触发器选「每天」→ 设置时间（比如 09:00）
-3. 操作选「启动程序」，程序填：
-   ```
-   python
-   ```
-   参数填：
-   ```
-   D:\路径\到\deepseek-price-alert\deepseek_price_alert.py --once
-   ```
-4. 完成。之后每天到点自动检查一次。
+设备每次开机启动后，自动触发一次价格检查，**有降价才提醒**（不打扰）。
 
-### macOS（launchd） / Linux（cron）
+```bash
+# 启用开机提醒
+python deepseek_price_alert.py --setup-startup
 
-macOS 用 `launchd`，Linux 用 `crontab`，网上有很多现成教程；核心就是把 `--once` 命令按计划跑起来。
+# 取消开机提醒
+python deepseek_price_alert.py --remove-startup
+```
+
+实现原理：在 Windows「启动」文件夹创建静默运行脚本，开机后自动执行 `--once`。
+
+### ⏰ 每日定时提醒 / Daily reminder
+
+每天固定时间自动触发一次价格检查，**有降价才提醒**。
+
+```bash
+# 启用每日定时提醒（例如每天 09:30）
+python deepseek_price_alert.py --setup-schedule 09:30
+
+# 取消每日定时提醒
+python deepseek_price_alert.py --remove-schedule
+```
+
+实现原理：通过 Windows 任务计划程序创建每天运行一次的定时任务。
+
+### 🔔 提醒方式 / Reminder channel
+
+通过 `config.json` 的 `reminder_channel` 字段选择（可用 `style_picker.html` 或手动编辑）：
+
+| 值 | 效果 |
+|---|---|
+| `popup` | 仅弹窗（默认，安静） |
+| `popup_sound` | 弹窗 + 系统提示音（更醒目） |
+
+### 📋 查看提醒状态
+
+```bash
+python deepseek_price_alert.py --status
+```
+
+显示开机提醒、每日定时提醒是否已启用，以及当前提醒方式。
+
+> 提示：以上三个命令仅 Windows 支持。macOS / Linux 可用系统自带的 launchd / cron 实现同样的定时效果。
 
 ---
 

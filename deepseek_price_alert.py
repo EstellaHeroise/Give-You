@@ -134,19 +134,37 @@ def log(msg: str) -> None:
 
 
 def notify(title: str, message: str) -> None:
-    """跨平台桌面通知 (Windows / macOS / Linux)."""
+    """跨平台桌面通知 (Windows / macOS / Linux).
+
+    根据 config.json 的 reminder_channel 决定是否播放系统提示音:
+      - popup: 仅弹窗
+      - popup_sound: 弹窗 + 系统提示音
+    """
     system = sys.platform
+    channel = get_reminder_channel()
+    play_sound = channel == "popup_sound"
+
     try:
         if system.startswith("win"):
             import ctypes
+            if play_sound:
+                # 播放系统提示音 (MB_ICONASTERISK 自带提示音)
+                ctypes.windll.user32.MessageBeep(0x40)
             ctypes.windll.user32.MessageBoxW(0, message, title, 0x40 | 0x1000)
         elif system == "darwin":
+            if play_sound:
+                subprocess.run(
+                    ["osascript", "-e", "beep"],
+                    check=True, timeout=10,
+                )
             subprocess.run(
                 ["osascript", "-e",
                  f'display notification "{message}" with title "{title}"'],
                 check=True, timeout=15,
             )
         else:
+            if play_sound:
+                print("\a")  # 终端响铃
             subprocess.run(
                 ["notify-send", title, message],
                 check=True, timeout=15,
@@ -274,6 +292,7 @@ def load_config() -> dict:
         "terminal_style": "log",
         "window_theme": "light",
         "price_unit": "auto",
+        "reminder_channel": "popup",  # popup 仅弹窗 / popup_sound 弹窗+声音
     }
     if CONFIG_FILE.exists():
         try:
@@ -294,6 +313,11 @@ def get_terminal_style() -> str:
 def get_price_unit() -> str:
     """返回价格显示单位: auto / usd_per_1m / cny_per_10k / cny_per_1m."""
     return load_config().get("price_unit", "auto")
+
+
+def get_reminder_channel() -> str:
+    """返回提醒方式: popup 仅弹窗 / popup_sound 弹窗+声音."""
+    return load_config().get("reminder_channel", "popup")
 
 
 # --------------------------------------------------------------------------
@@ -464,9 +488,203 @@ def show_history() -> int:
     return 0
 
 
+def get_startup_script_path() -> Path:
+    """返回 Windows 启动文件夹里的启动脚本路径."""
+    # 用用户启动文件夹 (shell:startup)
+    startup_dir = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
+    return startup_dir / "deepseek_price_alert.vbs"
+
+
+def get_scheduler_task_name() -> str:
+    """返回计划任务名称."""
+    return "DeepSeekPriceAlertDaily"
+
+
+def setup_startup() -> int:
+    """
+    设置开机自启: 在 Windows 启动文件夹创建 VBS 脚本,
+    开机后静默运行 python deepseek_price_alert.py --once (自动检查价格)。
+    """
+    if not sys.platform.startswith("win"):
+        print("开机自启目前仅支持 Windows / Startup is only supported on Windows.")
+        return 1
+
+    script_path = get_startup_script_path()
+    python_exe = sys.executable
+    script = rf'''Set ws = CreateObject("Wscript.Shell")
+ws.Run """"{python_exe}"" ""{BASE_DIR / 'deepseek_price_alert.py'}"" --once", 0, False
+'''
+
+    try:
+        script_path.parent.mkdir(parents=True, exist_ok=True)
+        script_path.write_text(script, encoding="utf-8")
+        print(f"✅ 开机自启已设置 / Startup enabled: {script_path}")
+        print("   (开机后会自动检查一次 DeepSeek 价格，有降价才提醒)")
+        return 0
+    except OSError as exc:
+        print(f"❌ 设置开机自启失败 / Failed to enable startup: {exc}")
+        return 1
+
+
+def remove_startup() -> int:
+    """取消开机自启."""
+    if not sys.platform.startswith("win"):
+        print("开机自启目前仅支持 Windows / Startup is only supported on Windows.")
+        return 1
+
+    script_path = get_startup_script_path()
+    try:
+        if script_path.exists():
+            script_path.unlink()
+            print(f"✅ 已取消开机自启 / Startup disabled: {script_path}")
+        else:
+            print("ℹ️ 尚未设置开机自启 / No startup script found.")
+        return 0
+    except OSError as exc:
+        print(f"❌ 取消开机自启失败 / Failed to disable startup: {exc}")
+        return 1
+
+
+def setup_schedule(time_str: str) -> int:
+    """
+    设置每日定时提醒: 通过 schtasks 创建每天固定时间运行 --once 的任务。
+    time_str 格式: HH:MM (24小时制, 如 09:30)。
+    """
+    if not sys.platform.startswith("win"):
+        print("定时提醒目前仅支持 Windows / Schedule is only supported on Windows.")
+        return 1
+
+    # 校验时间格式
+    try:
+        datetime.strptime(time_str, "%H:%M")
+    except ValueError:
+        print("❌ 时间格式错误，请用 24 小时制 HH:MM，例如 09:30")
+        return 1
+
+    task_name = get_scheduler_task_name()
+    python_exe = sys.executable
+    script = str(BASE_DIR / "deepseek_price_alert.py")
+
+    # 构建 schtasks 命令
+    cmd = [
+        "schtasks", "/Create", "/TN", task_name,
+        "/TR", f'"{python_exe}" "{script}" --once',
+        "/SC", "DAILY", "/ST", time_str,
+        "/F",
+    ]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if result.returncode == 0:
+            print(f"✅ 每日定时提醒已设置 / Daily reminder set: {time_str}")
+            print("   (每天到点会自动检查 DeepSeek 价格，有降价才提醒)")
+            return 0
+        else:
+            print(f"❌ 设置定时提醒失败 / Failed to set schedule: {result.stderr.strip()}")
+            return 1
+    except OSError as exc:
+        print(f"❌ 设置定时提醒失败 / Failed to set schedule: {exc}")
+        return 1
+
+
+def remove_schedule() -> int:
+    """取消每日定时提醒."""
+    if not sys.platform.startswith("win"):
+        print("定时提醒目前仅支持 Windows / Schedule is only supported on Windows.")
+        return 1
+
+    task_name = get_scheduler_task_name()
+    cmd = ["schtasks", "/Delete", "/TN", task_name, "/F"]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if result.returncode == 0:
+            print("✅ 已取消每日定时提醒 / Daily reminder disabled.")
+        else:
+            # 区分"任务不存在"和其他错误
+            err = result.stderr.strip()
+            if "not found" in err.lower() or "不存在" in err:
+                print("ℹ️ 尚未设置定时提醒 / No scheduled task found.")
+            else:
+                print(f"❌ 取消定时提醒失败 / Failed to remove schedule: {err}")
+        return 0
+    except OSError as exc:
+        print(f"❌ 取消定时提醒失败 / Failed to remove schedule: {exc}")
+        return 1
+
+
+def show_status() -> int:
+    """查看开机自启和定时提醒状态 (不依赖 schtasks 外部命令)."""
+    print("=== 提醒功能状态 / Reminder status ===\n")
+
+    if not sys.platform.startswith("win"):
+        print("当前平台非 Windows，开机自启和定时提醒暂不支持。")
+        return 0
+
+    # 开机自启: 检查启动文件夹脚本是否存在
+    startup_path = get_startup_script_path()
+    if startup_path.exists():
+        print(f"✅ 开机自启: 已启用 / Startup: enabled")
+        print(f"   脚本: {startup_path}")
+    else:
+        print(f"❌ 开机自启: 未启用 / Startup: disabled")
+    print()
+
+    # 定时任务: 通过注册表 TaskCache 检查任务是否存在 (避免调用 schtasks)
+    task_name = get_scheduler_task_name()
+    task_reg_path = (
+        r"Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache"
+    )
+    task_exists = False
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, task_reg_path) as key:
+            # 树状结构: TaskCache\Tree\<任务名>
+            try:
+                with winreg.OpenKey(key, r"Tree\\" + task_name):
+                    task_exists = True
+            except FileNotFoundError:
+                task_exists = False
+    except Exception:
+        # 无法读取注册表时，退化为"未设置"
+        task_exists = False
+
+    if task_exists:
+        print(f"✅ 每日定时提醒: 已设置 / Daily reminder: enabled")
+    else:
+        print(f"❌ 每日定时提醒: 未设置 / Daily reminder: disabled")
+
+    print(f"\n提醒方式 / Channel: {get_reminder_channel()}"
+          f"({'仅弹窗' if get_reminder_channel() == 'popup' else '弹窗+声音'})")
+    return 0
+
+
 def main() -> int:
     args = sys.argv[1:]
 
+    # 开机自启 / Startup
+    if "--setup-startup" in args:
+        return setup_startup()
+    if "--remove-startup" in args:
+        return remove_startup()
+
+    # 每日定时提醒 / Daily schedule
+    if "--setup-schedule" in args:
+        # 用法: --setup-schedule HH:MM
+        idx = args.index("--setup-schedule")
+        if idx + 1 < len(args):
+            return setup_schedule(args[idx + 1])
+        print("用法 / Usage: python deepseek_price_alert.py --setup-schedule HH:MM")
+        print("示例 / Example: python deepseek_price_alert.py --setup-schedule 09:30")
+        return 1
+    if "--remove-schedule" in args:
+        return remove_schedule()
+
+    # 查看提醒状态 / Status
+    if "--status" in args:
+        return show_status()
+
+    # 建立价格基线 / Create baseline
     if "--init" in args:
         html = http_get(PRICING_URL)
         current = parse_prices(html)
@@ -479,9 +697,11 @@ def main() -> int:
             log(f"  {model}: {json.dumps(metrics, ensure_ascii=False)}")
         return 0
 
+    # 查看历史 / View history
     if "--history" in args:
         return show_history()
 
+    # 默认: 单次检查 / Default: one-time check
     return run_check()
 
 
