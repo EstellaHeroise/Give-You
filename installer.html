@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeepSeek 降价提醒 · 安装向导</title>
+<title>DeepSeek 降价提醒 · 安装</title>
 <style>
   :root {
     --bg: #0f1115;
@@ -29,39 +29,50 @@
     justify-content: center;
     padding: 32px 16px;
   }
-  .container { max-width: 880px; width: 100%; }
-  header { text-align: center; margin-bottom: 28px; }
-  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 0.5px; }
-  header h1 .emoji { margin-right: 6px; }
-  header p { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .container { max-width: 860px; width: 100%; }
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { font-size: 24px; font-weight: 700; letter-spacing: 0.3px; }
+  header .sub { color: var(--muted); margin-top: 8px; font-size: 15px; line-height: 1.7; }
   .badge {
     display: inline-block; background: var(--panel-2); border: 1px solid var(--border);
-    border-radius: 999px; padding: 4px 12px; font-size: 12px; color: var(--accent-2);
-    margin-top: 10px;
+    border-radius: 999px; padding: 4px 12px; font-size: 12px; color: var(--accent-2); margin-top: 10px;
   }
-  .step { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-  .step b { color: var(--text); }
+  .question {
+    text-align: center; font-size: 17px; font-weight: 600; margin: 28px 0 18px; color: var(--text);
+  }
+  .question small { display: block; color: var(--muted); font-weight: 400; font-size: 13px; margin-top: 6px; }
 
-  /* 版本卡片 */
-  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+  /* 三个提醒方式卡片 */
+  .cards { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 20px; }
   .card {
     background: var(--panel); border: 2px solid var(--border); border-radius: var(--radius);
-    padding: 22px; cursor: pointer; transition: all 0.18s ease; position: relative;
+    padding: 18px 20px; cursor: pointer; transition: all 0.18s ease; position: relative;
+    display: flex; gap: 16px; align-items: flex-start; text-align: left;
   }
-  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card:hover { border-color: var(--accent); transform: translateY(-1px); }
   .card.selected { border-color: var(--accent); background: var(--panel-2); box-shadow: 0 0 0 3px rgba(79,124,255,0.2); }
-  .card .tag {
-    position: absolute; top: -10px; right: 12px; font-size: 11px; font-weight: 700;
-    padding: 3px 10px; border-radius: 999px; background: var(--accent); color: #fff;
+  .card .icon { font-size: 30px; line-height: 1.2; flex-shrink: 0; margin-top: 2px; }
+  .card .body { flex: 1; }
+  .card .title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .card h2 { font-size: 17px; font-weight: 700; }
+  .card .recommend {
+    background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px;
   }
-  .card h2 { font-size: 18px; margin-bottom: 6px; }
-  .card .subtitle { color: var(--accent-2); font-size: 13px; margin-bottom: 12px; }
-  .card ul { list-style: none; }
-  .card ul li { font-size: 13px; color: var(--muted); padding: 4px 0; display: flex; gap: 6px; }
-  .card ul li::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; }
-  .card .divider { border-top: 1px dashed var(--border); margin: 14px 0; }
-  .card .compat { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .card .desc { font-size: 14px; color: var(--text); line-height: 1.7; margin-bottom: 6px; }
+  .card .how { font-size: 13px; color: var(--accent-2); line-height: 1.6; }
+  .card .for { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 4px; }
+  .card .example {
+    display: inline-block; margin-top: 6px; background: #0a0c10; border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #a8b2c1; font-family: Consolas, monospace;
+  }
+  /* 「它的作用」小字提示 */
+  .role {
+    margin-top: 10px; padding: 8px 10px; background: rgba(79,124,255,0.08);
+    border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0;
+  }
+  .role .role-label { font-size: 11px; font-weight: 700; color: var(--accent-2); letter-spacing: 1px; margin-bottom: 2px; }
+  .role .role-text { font-size: 13px; color: var(--text); line-height: 1.7; }
 
   /* 选项区 */
   .options {
@@ -70,20 +81,24 @@
   }
   .options.visible { display: block; }
   .options h3 { font-size: 14px; color: var(--text); margin-bottom: 12px; }
-  .option-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; cursor: pointer; }
-  .option-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
-  .option-row .desc { color: var(--muted); font-size: 12px; margin-left: 26px; margin-top: 2px; }
+  .option-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 14px; cursor: pointer; }
+  .option-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin-top: 2px; }
+  .option-row .desc { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .option-row label { cursor: pointer; }
   .option-row input[type="text"] {
     background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
-    border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 100%;
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 100%; margin-top: 4px;
   }
-  .option-row label { cursor: pointer; }
+  .tip {
+    margin-top: 12px; padding: 10px 12px; background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--muted); line-height: 1.7;
+  }
 
-  /* 安装按钮与进度 */
+  /* 按钮与状态 */
   .actions { text-align: center; }
   .btn-install {
     background: var(--accent); color: #fff; border: none; border-radius: 8px;
-    padding: 14px 42px; font-size: 16px; font-weight: 600; cursor: pointer;
+    padding: 14px 48px; font-size: 16px; font-weight: 600; cursor: pointer;
     transition: background 0.15s ease, opacity 0.15s ease;
   }
   .btn-install:hover { background: var(--accent-2); }
@@ -98,100 +113,150 @@
     white-space: pre-wrap; word-break: break-all;
   }
   footer { text-align: center; margin-top: 24px; color: var(--muted); font-size: 12px; }
+  .footer-note {
+    margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--border);
+    font-size: 13px; color: var(--accent-2); line-height: 1.7;
+  }
+  .footer-note .heart { color: #ff6b81; }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1><span class="emoji">📉</span>DeepSeek 降价提醒 · 安装向导</h1>
-    <p>一个安装包，两个版本。选择适合你的版本，一键完成安装。</p>
-    <span class="badge">v<span id="ver">0.5.0</span> · 零依赖 · 跨平台</span>
+    <h1>📉 DeepSeek 降价提醒 · 安装</h1>
+    <p class="sub">装好后，当 DeepSeek 的 API 价格下降时，它会提醒你。<br>下面只需要选一件小事：<b>你希望怎么收到提醒？</b></p>
+    <span class="badge">v<span id="ver">0.5.0</span> · 免费 · 不用注册</span>
   </header>
 
-  <div class="step">第 1 步 / 2：<b>选择要安装的版本</b></div>
+  <div class="question">
+    你希望怎么收到提醒？
+    <small>选一个最顺手的就行，选错了也能重新选。</small>
+  </div>
 
+  <!-- 提醒方式卡片 -->
   <div class="cards">
-    <!-- 桌面通用版 -->
-    <div class="card" data-edition="desktop" id="card-desktop" onclick="selectEdition('desktop')">
-      <span class="tag">推荐</span>
-      <h2>🖥️ 桌面通用版</h2>
-      <div class="subtitle">Desktop Edition · 独立程序</div>
-      <ul>
-        <li>独立运行的桌面程序，不依赖任何 AI 平台</li>
-        <li>支持开机自启 + 每日定时提醒</li>
-        <li>原生系统弹窗 + 声音提醒</li>
-        <li>风格预览与自定义配置</li>
-      </ul>
-      <div class="divider"></div>
-      <div class="compat">适用于：Windows / macOS / Linux，Python 3.8+。适合所有希望独立监控 DeepSeek 价格的用户。</div>
+
+    <!-- 方式一：自动弹窗提醒 -->
+    <div class="card" data-reminder="auto_popup" id="card-auto" onclick="selectReminder('auto_popup')">
+      <div class="icon">🖥️</div>
+      <div class="body">
+        <div class="title-row">
+          <h2>自动弹窗提醒</h2>
+          <span class="recommend">推荐</span>
+        </div>
+        <div class="desc">装好就不用管了。它会自己每天检查价格，一降价，电脑上就弹出通知告诉你。</div>
+        <div class="how">✅ 全自动：不用你开口，它自己盯着。</div>
+        <div class="role">
+          <div class="role-label">📌 它的作用</div>
+          <div class="role-text">装好后，它会<b>自己</b>每天检查 DeepSeek 官方价格。发现降价，电脑右下角<b>自动弹出通知</b>。全程不用你操作，也不用你记着去问。</div>
+        </div>
+        <div class="for">适合：不想操心、希望它自己看着的人。</div>
+      </div>
     </div>
 
-    <!-- WorkBuddy 适配版 -->
-    <div class="card" data-edition="workbuddy" id="card-workbuddy" onclick="selectEdition('workbuddy')">
-      <h2>🤖 WorkBuddy 适配版</h2>
-      <div class="subtitle">WorkBuddy Edition · Skill 联动</div>
-      <ul>
-        <li>安装为 WorkBuddy Skill，对话中直接触发</li>
-        <li>「DeepSeek 降价了吗？」一句话自动检查</li>
-        <li>可选同时安装桌面联动程序（双通道提醒）</li>
-        <li>支持开机自启 + 每日定时提醒</li>
-      </ul>
-      <div class="divider"></div>
-      <div class="compat">适用于：已安装 WorkBuddy 的用户。安装后可在 WorkBuddy 对话中通过「deepseek 降价」「检查 deepseek 价格」等指令触发。</div>
+    <!-- 方式二：在 WorkBuddy 里问它 -->
+    <div class="card" data-reminder="workbuddy_chat" id="card-chat" onclick="selectReminder('workbuddy_chat')">
+      <div class="icon">💬</div>
+      <div class="body">
+        <div class="title-row">
+          <h2>在 WorkBuddy 里问它</h2>
+        </div>
+        <div class="desc">装好后，你平时用的 WorkBuddy 聊天助手就会这项技能。你随时问一句，它就帮你查。</div>
+        <div class="example">你在 WorkBuddy 里说："DeepSeek 降价了吗？"</div>
+        <div class="role">
+          <div class="role-label">📌 它的作用</div>
+          <div class="role-text">装进 WorkBuddy 后，你<b>随时想查就查</b>：在 WorkBuddy 对话里问一句「DeepSeek 降价了吗」，它就立刻查给你看。也可设置<b>每天定时自动查</b>，到点主动告诉你。</div>
+        </div>
+        <div class="for">适合：平时常用 WorkBuddy、习惯跟 AI 对话的人。</div>
+      </div>
+    </div>
+
+    <!-- 方式三：两个都要 -->
+    <div class="card" data-reminder="both" id="card-both" onclick="selectReminder('both')">
+      <div class="icon">✨</div>
+      <div class="body">
+        <div class="title-row">
+          <h2>两个都要（双保险）</h2>
+        </div>
+        <div class="desc">自动弹窗提醒 + 在 WorkBuddy 里问，两种都能用，一个提醒都不漏。</div>
+        <div class="how">✅ 电脑自动弹窗 &nbsp;·&nbsp; ✅ WorkBuddy 里也能问</div>
+        <div class="role">
+          <div class="role-label">📌 它的作用</div>
+          <div class="role-text">两个都装：电脑<b>自动弹窗</b>盯着，同时 WorkBuddy 里<b>也能随时问、能定时查</b>。任何一边漏了，另一边都能顶上，最稳妥。</div>
+        </div>
+        <div class="for">适合：想要双通道提醒、最稳妥的人。</div>
+      </div>
     </div>
   </div>
 
-  <!-- 选项区：桌面版 -->
-  <div class="options" id="options-desktop">
-    <h3>⚙️ 桌面通用版 · 安装选项</h3>
+  <!-- 选项区：自动弹窗提醒 -->
+  <div class="options" id="options-auto_popup">
+    <h3>⚙️ 自动弹窗提醒 · 安装选项</h3>
     <div class="option-row">
-      <input type="checkbox" id="desktop-startup" checked>
-      <label for="desktop-startup">启用开机自启（每次开机自动检查一次价格，有降价才提醒）</label>
+      <input type="checkbox" id="auto-startup" checked>
+      <div>
+        <label for="auto-startup">开机后自动检查一次（每次开电脑，它自己看一眼价格，有降价才提醒）</label>
+      </div>
     </div>
     <div class="option-row">
-      <label>安装目录（留空使用默认：<code>~/deepseek-price-alert/desktop</code>）</label>
-    </div>
-    <div class="option-row">
-      <input type="text" id="desktop-dir" placeholder="例如 D:\MyTools\deepseek-price-alert（留空为默认）">
+      <div style="flex:1">
+        <label>安装到哪个文件夹？（不懂就留空，用默认的就行）</label>
+        <input type="text" id="auto-dir" placeholder="留空即可，会自动放到你电脑的用户文件夹里">
+      </div>
     </div>
   </div>
 
-  <!-- 选项区：WorkBuddy 版 -->
-  <div class="options" id="options-workbuddy">
-    <h3>⚙️ WorkBuddy 适配版 · 安装选项</h3>
+  <!-- 选项区：WorkBuddy 里问 -->
+  <div class="options" id="options-workbuddy_chat">
+    <h3>⚙️ 在 WorkBuddy 里问它 · 安装选项</h3>
     <div class="option-row">
-      <input type="checkbox" id="wb-also-desktop" checked>
-      <label for="wb-also-desktop">同时安装桌面联动程序（双通道提醒：WorkBuddy 对话 + 桌面弹窗）</label>
+      <input type="checkbox" id="chat-also-desktop">
+      <div>
+        <label for="chat-also-desktop">顺便也装自动弹窗提醒（这样 WorkBuddy 里能问、电脑也会自动弹窗，双保险）</label>
+      </div>
     </div>
     <div class="option-row">
-      <input type="checkbox" id="wb-startup" checked>
-      <label for="wb-startup">启用开机自启（桌面联动程序每次开机自动检查一次）</label>
+      <input type="checkbox" id="chat-startup" checked>
+      <div>
+        <label for="chat-startup">开机后自动检查一次（勾选上面"双保险"后才有用）</label>
+      </div>
     </div>
+    <div class="tip">
+      📌 WorkBuddy 技能会自动装到它该在的位置，你不用管。<br>
+      装好后，在 WorkBuddy 里说一句「DeepSeek 降价了吗」或「检查一下 DeepSeek 价格」就能用。
+    </div>
+  </div>
+
+  <!-- 选项区：两个都要 -->
+  <div class="options" id="options-both">
+    <h3>⚙️ 双保险 · 安装选项</h3>
     <div class="option-row">
-      <label>桌面联动程序安装目录（留空默认：<code>~/deepseek-price-alert/desktop</code>）</label>
+      <input type="checkbox" id="both-startup" checked>
+      <div>
+        <label for="both-startup">开机后自动检查一次</label>
+      </div>
     </div>
-    <div class="option-row">
-      <input type="text" id="wb-dir" placeholder="例如 D:\MyTools\deepseek-price-alert（留空为默认）">
-    </div>
-    <div style="margin-top:10px;padding:10px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.7;">
-      📌 WorkBuddy Skill 将安装到：<code>~/.workbuddy/skills/deepseek-price-alert</code>（无需更改）。
-      安装完成后，在 WorkBuddy 对话中输入「deepseek 降价」「检查 deepseek 价格」等即可触发。
+    <div class="tip">
+      📌 自动弹窗程序 + WorkBuddy 技能会一起装好，你什么都不用管。<br>
+      装好后：电脑会自动弹窗提醒，你在 WorkBuddy 里问也能查。
     </div>
   </div>
 
   <div class="actions">
     <button class="btn-install" id="btn-install" disabled onclick="doInstall()">开始安装</button>
-    <div class="status" id="status">请先选择一个版本</div>
+    <div class="status" id="status">请先选一种提醒方式</div>
     <div class="log-box" id="log-box"></div>
   </div>
 
-  <footer>DeepSeek Price Alert · 二合一安装包 v<span id="ver2">0.5.0</span> · 非 DeepSeek 官方产品</footer>
+  <footer>
+    DeepSeek 降价提醒 · 二合一安装包 v<span id="ver2">0.5.0</span> · 非 DeepSeek 官方产品
+    <div class="footer-note">💡 若想要其他功能，可以私信创作者，说不定会更新哦 <span class="heart">❤</span></div>
+  </footer>
 </div>
 
 <script>
-let selectedEdition = null;
+let selectedReminder = null;
 
-// 页面加载时读取版本信息
 async function init() {
   try {
     const r = await fetch('/api/info');
@@ -203,15 +268,23 @@ async function init() {
   } catch (e) { /* 忽略 */ }
 }
 
-// 选择版本
-function selectEdition(edition) {
-  selectedEdition = edition;
-  document.getElementById('card-desktop').classList.toggle('selected', edition === 'desktop');
-  document.getElementById('card-workbuddy').classList.toggle('selected', edition === 'workbuddy');
-  document.getElementById('options-desktop').classList.toggle('visible', edition === 'desktop');
-  document.getElementById('options-workbuddy').classList.toggle('visible', edition === 'workbuddy');
+function selectReminder(reminder) {
+  selectedReminder = reminder;
+  // 高亮对应卡片
+  document.querySelectorAll('.card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.reminder === reminder);
+  });
+  // 显示对应选项区
+  document.querySelectorAll('.options').forEach(o => o.classList.remove('visible'));
+  document.getElementById('options-' + reminder).classList.add('visible');
+
+  const names = {
+    auto_popup: '自动弹窗提醒',
+    workbuddy_chat: '在 WorkBuddy 里问它',
+    both: '两个都要'
+  };
   document.getElementById('btn-install').disabled = false;
-  setStatus('已选择：' + (edition === 'desktop' ? '桌面通用版' : 'WorkBuddy 适配版') + '，点击「开始安装」继续。', '');
+  setStatus('已选：「' + names[reminder] + '」。点「开始安装」就好。', '');
 }
 
 function setStatus(msg, cls) {
@@ -227,29 +300,42 @@ function appendLog(msg) {
   box.scrollTop = box.scrollHeight;
 }
 
-// 执行安装
+// 把"提醒方式"翻译成后端认识的"版本"
+function reminderToEdition(reminder) {
+  if (reminder === 'auto_popup') return 'desktop';
+  return 'workbuddy'; // workbuddy_chat 和 both 都装 WorkBuddy 技能
+}
+
 async function doInstall() {
-  if (!selectedEdition) return;
+  if (!selectedReminder) return;
   const btn = document.getElementById('btn-install');
   btn.disabled = true;
   setStatus('⏳ 正在安装，请稍候…', '');
-  appendLog('>>> 开始安装：' + (selectedEdition === 'desktop' ? '桌面通用版' : 'WorkBuddy 适配版'));
 
+  const edition = reminderToEdition(selectedReminder);
   const payload = {
-    edition: selectedEdition,
+    edition: edition,
     enable_startup: false,
     also_desktop: false,
     install_dir: ''
   };
 
-  if (selectedEdition === 'desktop') {
-    payload.enable_startup = document.getElementById('desktop-startup').checked;
-    payload.install_dir = document.getElementById('desktop-dir').value.trim();
-  } else {
-    payload.also_desktop = document.getElementById('wb-also-desktop').checked;
-    payload.enable_startup = document.getElementById('wb-startup').checked;
-    payload.install_dir = document.getElementById('wb-dir').value.trim();
+  if (selectedReminder === 'auto_popup') {
+    payload.enable_startup = document.getElementById('auto-startup').checked;
+    payload.install_dir = document.getElementById('auto-dir').value.trim();
+  } else if (selectedReminder === 'workbuddy_chat') {
+    payload.also_desktop = document.getElementById('chat-also-desktop').checked;
+    payload.enable_startup = document.getElementById('chat-startup').checked;
+  } else { // both
+    payload.also_desktop = true; // 两个都要 → 自动弹窗 + WorkBuddy 技能
+    payload.enable_startup = document.getElementById('both-startup').checked;
   }
+
+  appendLog('>>> 开始安装：' + ({
+    auto_popup: '自动弹窗提醒',
+    workbuddy_chat: '在 WorkBuddy 里问它',
+    both: '两个都要'
+  })[selectedReminder]);
 
   try {
     const r = await fetch('/api/install', {
@@ -261,23 +347,17 @@ async function doInstall() {
 
     if (data.ok) {
       const res = data.result;
-      let lines = [];
-      lines.push('✅ ' + res.version + ' 安装完成！');
-      if (res.skill_dir) {
-        lines.push('   Skill 目录: ' + res.skill_dir);
-        appendLog('   Skill 目录: ' + res.skill_dir);
-      }
-      if (res.install_dir) {
-        lines.push('   安装目录: ' + res.install_dir);
-        appendLog('   安装目录: ' + res.install_dir);
-      }
-      if (res.desktop_dir) {
-        lines.push('   桌面联动程序: ' + res.desktop_dir);
-        appendLog('   桌面联动程序: ' + res.desktop_dir);
-      }
-      lines.push('   开机自启: ' + (res.startup ? '已启用 ✅' : '未启用'));
-      appendLog('   开机自启: ' + (res.startup ? '已启用 ✅' : '未启用'));
+      appendLog('✅ 安装完成！');
+      if (res.skill_dir) appendLog('   WorkBuddy 技能: ' + res.skill_dir);
+      if (res.install_dir) appendLog('   安装位置: ' + res.install_dir);
+      if (res.desktop_dir) appendLog('   自动弹窗程序: ' + res.desktop_dir);
+      appendLog('   开机自动检查: ' + (res.startup ? '已开启 ✅' : '未开启'));
       appendLog('   共复制 ' + res.files.length + ' 个文件。');
+
+      let lines = ['✅ 安装完成！'];
+      if (res.skill_dir) lines.push('   WorkBuddy 技能已装好，去 WorkBuddy 里说「DeepSeek 降价了吗」就能用。');
+      if (res.install_dir) lines.push('   自动弹窗程序在: ' + res.install_dir);
+      if (res.desktop_dir) lines.push('   自动弹窗程序在: ' + res.desktop_dir);
       setStatus(lines.join('\n'), 'ok');
     } else {
       appendLog('❌ 安装失败: ' + (data.error || '未知错误'));

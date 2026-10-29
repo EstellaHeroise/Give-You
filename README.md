@@ -53,7 +53,8 @@ The installer bundles both editions — download once, choose your edition durin
 - 📜 **价格历史自动记录**（`price_history.json`），涨价也会记录（仅日志，不弹窗）
 - 🐍 **纯 Python 标准库，零依赖** —— clone 下来就能跑，不用 `pip install` 任何东西
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
-- 💻 **命令行友好**：`--init`、`--once`、`--history`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--remove-schedule`、`--status`
+- 💻 **命令行友好**：`--init`、`--once`、`--history`、`--check-update`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--remove-schedule`、`--status`
+- 🔄 **自动更新检测**：脚本与安装向导启动时自动检查 GitHub 最新版本，发现新版提示下载（配合 GitHub Releases 使用）
 
 ---
 
@@ -151,6 +152,26 @@ If any price is lower than the baseline, you'll get a desktop notification + log
 ```bash
 python deepseek_price_alert.py --history
 ```
+
+### 5. 检查更新 / Check for updates
+
+```bash
+python deepseek_price_alert.py --check-update
+```
+
+脚本会访问 GitHub Releases API，发现新版本时提示下载。
+
+---
+
+## 🔄 自动更新检测 / Auto Update Check
+
+项目已内置**自动更新检测**：
+
+- **主脚本**：每次执行检查（`--once` / 开机 / 定时）时，静默检测 GitHub 最新版本；有新版本才提示，无更新不打扰。
+- **安装向导**：每次启动时检测最新安装包版本，发现新版打印提示。
+- **手动检查**：随时运行 `python deepseek_price_alert.py --check-update`。
+
+> 注意：检测功能需要先配置 GitHub 仓库地址（替换 `deepseek_price_alert.py` 与 `installer.py` 中的 `<YOUR_GITHUB_USERNAME>`），并配合 GitHub Releases 发布使用。当前仅提示，不自动下载替换（保持零依赖与安全）。
 
 ---
 

@@ -51,6 +51,7 @@ SCRIPT="$SCRIPT_DIR/deepseek_price_alert.py"
 | 查看当前价格 / 检查是否降价 | `python "$SCRIPT" --once` |
 | 建立价格基线（首次使用） | `python "$SCRIPT" --init` |
 | 查看历史价格记录 | `python "$SCRIPT" --history` |
+| 检查是否有新版本 | `python "$SCRIPT" --check-update` |
 | 设置开机自启（Windows） | `python "$SCRIPT" --setup-startup` |
 | 取消开机自启（Windows） | `python "$SCRIPT" --remove-startup` |
 | 设置每日定时提醒（Windows） | `python "$SCRIPT" --setup-schedule 09:30` |

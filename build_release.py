@@ -78,7 +78,7 @@ def build(version: str) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="打包 DeepSeek 降价提醒 二合一安装包")
-    parser.add_argument("--version", default="0.5.0", help="版本号 (默认 0.5.0)")
+    parser.add_argument("--version", default="0.6.0", help="版本号 (默认 0.6.0)")
     args = parser.parse_args()
     build(args.version)
     return 0

@@ -18,6 +18,7 @@ Monitor DeepSeek official API pricing and alert you when prices drop.
   python deepseek_price_alert.py --init     # 建立价格基线(首次运行)
   python deepseek_price_alert.py --once      # 单次检查并提醒
   python deepseek_price_alert.py --history  # 查看历史价格记录
+  python deepseek_price_alert.py --check-update  # 手动检查是否有新版本
   python deepseek_price_alert.py          # 默认: 同 --once
 
 MIT License. 数据来源 / Data source: DeepSeek 官方定价页与官方公告 (官方文档).
@@ -34,6 +35,14 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 # 常量配置 / Constants
 # --------------------------------------------------------------------------
+__version__ = "0.6.0"  # 当前版本，用于自动更新检测 / Current version
+
+# GitHub 仓库地址（开源后替换 <YOUR_GITHUB_USERNAME> 为真实用户名）
+# GitHub repo (replace <YOUR_GITHUB_USERNAME> after open-sourcing)
+GITHUB_REPO = "<YOUR_GITHUB_USERNAME>/deepseek-price-alert"
+GITHUB_RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+GITHUB_DOWNLOAD_BASE = f"https://github.com/{GITHUB_REPO}/releases/latest/download"
+
 PRICING_URL = "https://api-docs.deepseek.com/quick_start/pricing"
 UPDATES_URL = "https://api-docs.deepseek.com/updates"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
@@ -265,6 +274,41 @@ def announcement_matches_promo(title: str) -> bool:
 
 
 # --------------------------------------------------------------------------
+# 自动更新检测 / Auto update check
+# --------------------------------------------------------------------------
+def check_for_update(silent: bool = False) -> None:
+    """
+    检查 GitHub 上是否有新版本。
+    若有新版，打印提示（不自动下载，保持零依赖与安全）。
+    silent=True 时不打印"没有更新"这类无变化信息（用于定时/开机等静默场景）。
+    """
+    if "<YOUR_GITHUB_USERNAME>" in GITHUB_REPO:
+        return  # 尚未配置真实仓库地址，跳过
+
+    try:
+        html = http_get(GITHUB_RELEASES_API)
+        data = json.loads(html)
+        latest = str(data.get("tag_name", "")).lstrip("vV")
+        if not latest:
+            return
+    except Exception as exc:
+        log(f"检查更新失败 / Update check failed: {exc}")
+        return
+
+    current = __version__.lstrip("vV")
+    if latest == current:
+        if not silent:
+            log(f"已是最新版本 / Already up to date: v{current}")
+        return
+
+    log(
+        f"发现新版本 / New version available: v{latest} (当前 v{current})\n"
+        f"  下载 / Download: {GITHUB_DOWNLOAD_BASE}/deepseek-price-alert-setup-{latest}.zip\n"
+        f"  或前往 Releases 页 / Or visit: https://github.com/{GITHUB_REPO}/releases"
+    )
+
+
+# --------------------------------------------------------------------------
 # 历史记录 / History persistence
 # --------------------------------------------------------------------------
 def load_history() -> dict:
@@ -451,6 +495,9 @@ def run_check() -> int:
 
     # 检查公告
     check_updates(history, rate)
+
+    # 检查是否有新版本（静默模式：有更新才提示，无更新不打扰）
+    check_for_update(silent=True)
 
     # 保存本次快照(总是更新)
     history["prices"] = current
@@ -683,6 +730,11 @@ def main() -> int:
     # 查看提醒状态 / Status
     if "--status" in args:
         return show_status()
+
+    # 手动检查更新 / Check for updates manually
+    if "--check-update" in args:
+        check_for_update(silent=False)
+        return 0
 
     # 建立价格基线 / Create baseline
     if "--init" in args:

@@ -36,7 +36,11 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.5.0"
+VERSION = "0.6.0"
+
+# GitHub 仓库地址（开源后替换为真实用户名）
+GITHUB_REPO = "<YOUR_GITHUB_USERNAME>/deepseek-price-alert"
+GITHUB_RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 # 安装目标根目录（默认在用户主目录下，两版本子目录分离，互不冲突）
 DEFAULT_TARGET_ROOT = Path.home() / "deepseek-price-alert"
@@ -70,6 +74,39 @@ def log(msg: str) -> None:
             f.write(ts_line + "\n")
     except OSError:
         pass
+
+
+# --------------------------------------------------------------------------
+# 自动更新检测 / Auto update check
+# --------------------------------------------------------------------------
+def check_for_update() -> None:
+    """检查 GitHub 上是否有比当前安装包更新的版本，有则打印提示。"""
+    if "<YOUR_GITHUB_USERNAME>" in GITHUB_REPO:
+        return  # 尚未配置真实仓库地址，跳过
+
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            GITHUB_RELEASES_API,
+            headers={"User-Agent": "Mozilla/5.0 deepseek-price-alert-installer"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        latest = str(data.get("tag_name", "")).lstrip("vV")
+        if not latest:
+            return
+    except Exception as exc:
+        log(f"检查更新失败 / Update check failed: {exc}")
+        return
+
+    if latest != VERSION.lstrip("vV"):
+        log(
+            f"发现新版本 / New version available: v{latest} (当前安装包 v{VERSION})\n"
+            f"  请前往 GitHub Releases 下载最新安装包: "
+            f"https://github.com/{GITHUB_REPO}/releases"
+        )
+    else:
+        log(f"已是最新版本 / Already up to date: v{VERSION}")
 
 
 # --------------------------------------------------------------------------
@@ -311,6 +348,9 @@ def main() -> int:
     log(f"安装向导地址 / URL: {url}")
     log("在页面中选择「桌面通用版」或「WorkBuddy 适配版」完成安装。")
     log("=" * 60)
+
+    # 启动时检查是否有新版本
+    check_for_update()
 
     if not args.test:
         try:

@@ -113,6 +113,27 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.6.0] - 2026-10-30
+
+### 新增 / Added
+
+- 🔄 **自动更新检测**：脚本与安装向导启动时自动检查 GitHub 最新版本，发现新版提示下载
+  - Auto update check: the script and installer query the GitHub latest release and notify when a new version exists.
+- 💻 **新增命令 `--check-update`**：手动检查是否有新版本
+  - New CLI command `--check-update` for manual update checks.
+- 📢 **安装向导启动时检测更新**（`installer.py`），打印最新版本提示
+  - The installer also checks for updates on startup.
+
+### 说明 / Notes
+
+- 检测逻辑内置在 `deepseek_price_alert.py` 与 `installer.py` 中：
+  - 主脚本每次 `--once` / 开机 / 定时检查时静默检测，**有新版才提示**，无更新不打扰
+  - 安装向导启动时检测一次，发现新版打印下载地址
+- 需要先配置 GitHub 仓库地址（替换两处 `<YOUR_GITHUB_USERNAME>` 占位符），并配合 GitHub Releases 发布
+- 当前仅**提示**，不自动下载替换（保持零依赖与安全）；未来可扩展为自动下载安装包
+
+---
+
 ## 🔮 后续计划 / Planned
 
 - [ ] 推送 GitHub 开源（替换 README / LICENSE 中的 `<YOUR_GITHUB_USERNAME>`）
