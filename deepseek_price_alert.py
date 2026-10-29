@@ -95,6 +95,22 @@ def format_cny_per_10k(cny_per_10k: float) -> str:
     return f"¥{cny_per_10k:.4f}/万token"
 
 
+def format_price_for_display(price: float, unit: str, rate: float) -> str:
+    """
+    按用户选择的单位格式化价格。
+    unit: auto / usd_per_1m / cny_per_10k / cny_per_1m
+    """
+    if unit == "usd_per_1m":
+        return f"{format_usd(price)}/1M"
+    elif unit == "cny_per_1m":
+        return f"¥{price * rate:.4f}/百万token"
+    elif unit == "cny_per_10k":
+        return f"¥{price / 100.0 * rate:.4f}/万token"
+    else:  # auto: 同时显示两种
+        cny_per_10k = to_cny_per_10k(price, rate)
+        return f"{format_usd(price)}/1M = {format_cny_per_10k(cny_per_10k)}"
+
+
 def is_penny_deal(cny_per_10k: float) -> bool:
     """是否达到"一分钱一万token"级别."""
     return cny_per_10k <= PENNY_PER_10K_CNY
@@ -257,6 +273,7 @@ def load_config() -> dict:
         "notification_style": "clean",
         "terminal_style": "log",
         "window_theme": "light",
+        "price_unit": "auto",
     }
     if CONFIG_FILE.exists():
         try:
@@ -274,6 +291,11 @@ def get_terminal_style() -> str:
     return load_config().get("terminal_style", "log")
 
 
+def get_price_unit() -> str:
+    """返回价格显示单位: auto / usd_per_1m / cny_per_10k / cny_per_1m."""
+    return load_config().get("price_unit", "auto")
+
+
 # --------------------------------------------------------------------------
 # 核心检查逻辑 / Core check logic
 # --------------------------------------------------------------------------
@@ -281,11 +303,12 @@ def build_price_lines(current: dict, old_prices: dict, rate: float):
     """
     对比当前与历史价格, 生成提醒行。
     返回 (lines, has_drop, has_big_deal)
-      lines: 每行包含模型/指标/新旧价格/双口径/降幅/重点标记
+      lines: 每行包含模型/指标/新旧价格/按配置单位的显示/降幅/重点标记
     """
     lines = []
     has_drop = False
     has_big_deal = False
+    unit = get_price_unit()
 
     for model, metrics in sorted(current.items()):
         old = old_prices.get(model)
@@ -301,7 +324,8 @@ def build_price_lines(current: dict, old_prices: dict, rate: float):
             if new_price > old_price * (2 - DROP_THRESHOLD):
                 log(
                     f"📈 {model} {metric}: "
-                    f"{format_usd(old_price)} -> {format_usd(new_price)}"
+                    f"{format_price_for_display(old_price, unit, rate)} -> "
+                    f"{format_price_for_display(new_price, unit, rate)}"
                 )
                 continue
 
@@ -313,8 +337,9 @@ def build_price_lines(current: dict, old_prices: dict, rate: float):
                 mark = "🔥 " if big else "📉 "
                 line = (
                     f"{mark}{model} {metric}: "
-                    f"{format_usd(old_price)} -> {format_usd(new_price)} "
-                    f"(-{drop_pct:.1f}%) | 现价 {format_cny_per_10k(cny_per_10k)}"
+                    f"{format_price_for_display(old_price, unit, rate)} -> "
+                    f"{format_price_for_display(new_price, unit, rate)} "
+                    f"(-{drop_pct:.1f}%)"
                 )
                 lines.append(line)
                 log(line)
@@ -420,16 +445,18 @@ def show_history() -> int:
         return 0
 
     cfg = load_config()
+    unit = cfg.get("price_unit", "auto")
     print(f"最后检查时间 / Last checked: {history.get('last_checked', '?')}")
     print(f"汇率 / Rate: 1 USD = {DEFAULT_USD_CNY} CNY")
     print(f"当前风格 / Style: 通知={cfg.get('notification_style')}, "
-          f"终端={cfg.get('terminal_style')}, 主题={cfg.get('window_theme')}")
+          f"终端={cfg.get('terminal_style')}, 主题={cfg.get('window_theme')}, "
+          f"单位={unit}")
     print("-" * 72)
     for model, metrics in sorted(history["prices"].items()):
         print(f"\n{model}:")
         for metric, price in sorted(metrics.items()):
-            cny = to_cny_per_10k(price, DEFAULT_USD_CNY)
-            print(f"  {metric:22s} {format_usd(price):>10s}/1M  =  {format_cny_per_10k(cny)}")
+            display = format_price_for_display(price, unit, DEFAULT_USD_CNY)
+            print(f"  {metric:22s} {display}")
 
     seen = history.get("seen_updates", [])
     if seen:

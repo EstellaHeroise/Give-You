@@ -13,10 +13,10 @@ A zero-dependency, cross-platform alert tool for DeepSeek official API price dro
 
 - 🎯 **只监控 DeepSeek 官方 API 定价**（`api-docs.deepseek.com/quick_start/pricing`），不是第三方转售平台
 - 🔔 **降价自动弹窗提醒**（Windows / macOS / Linux 原生通知，无需任何第三方库）
-- 💰 **双口径均价**：同时显示 `$ / 1M tokens`（官方口径）和 `¥ / 万token`（人民币，直观感受"一分钱一万token"）
+- 💰 **价格单位可自选**：`$ / 1M tokens`（官方口径）、`¥ / 万token`（直观感受"一分钱一万token"）、`¥ / 百万token`，或自动同时显示两种
 - 🔥 **大额优惠重点提醒**：降幅 ≥50% **或** 价格达到 `¥0.01/万token`（一分钱级）时，自动用 🔥 重点标记
 - 📢 **官方公告监控**：自动监控 DeepSeek 官方 `/updates` 公告列表，发现降价/优惠/新模型公告立即提醒
-- 🎨 **风格预览与选择**：提供 `style_preview.html`（纯预览）和 `style_picker.html`（点击选择并保存到 `config.json`），支持通知弹窗 / 终端输出 / 窗口主题三组风格
+- 🎨 **风格预览与选择**：提供 `style_preview.html`（纯预览）和 `style_picker.html`（点击选择并保存到 `config.json`），支持通知弹窗 / 终端输出 / 窗口主题三组风格 + 价格单位
 - 📜 **价格历史自动记录**（`price_history.json`），涨价也会记录（仅日志，不弹窗）
 - 🐍 **纯 Python 标准库，零依赖** —— clone 下来就能跑，不用 `pip install` 任何东西
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
@@ -62,6 +62,15 @@ python style_picker.html  # 浏览器打开, 点击选择, 点保存下载 confi
 | `dark` 深色 | 黑底浅字 |
 | `system` 跟随系统 | 自动匹配深浅 |
 | `blue` 蓝调 | 深蓝沉稳 |
+
+### 价格显示单位 / Price units
+
+| 单位 | 说明 | 示例 |
+|---|---|---|
+| `auto` 自动 | 同时显示美元和人民币 | `$0.6/1M = ¥0.0426/万token` |
+| `usd_per_1m` | 官方美元口径 | `$0.6/1M` |
+| `cny_per_10k` | 人民币 / 万token，直观感受一分钱 | `¥0.0426/万token` |
+| `cny_per_1m` | 人民币 / 百万token，官方口径 | `¥4.26/百万token` |
 
 > 注：当前版本的主脚本实际弹窗仍用系统原生通知（最稳定）；自定义风格弹窗样式通过 `style_preview.html` 预览展示，供未来 GUI 版本参考。
 

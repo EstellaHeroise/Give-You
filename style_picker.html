@@ -85,6 +85,13 @@
     <div class="section-sub">未来扩展 GUI 时的深浅色主题</div>
     <div class="style-list" id="theme-list"></div>
   </div>
+
+  <!-- ④ 价格显示单位 -->
+  <div class="section">
+    <div class="section-title">④ 价格显示单位</div>
+    <div class="section-sub">提醒与历史记录里的价格单位</div>
+    <div class="style-list" id="unit-list"></div>
+  </div>
 </div>
 
 <div class="btn-bar">
@@ -157,15 +164,36 @@ const WINDOW_THEMES = {
   blue: { name: "蓝调 Blue", desc: "深蓝沉稳", bg: "#0f1720", fg: "#dbeafe", card: "#1e2a3a", border: "#2d4a6a" },
 };
 
+// 价格显示单位 / Price display units
+const PRICE_UNITS = {
+  auto: {
+    name: "自动 Auto", desc: "同时显示美元和人民币",
+    preview: "$0.6/1M = ¥0.0426/万token",
+  },
+  usd_per_1m: {
+    name: "$ / 百万token", desc: "官方美元口径",
+    preview: "$0.6/1M",
+  },
+  cny_per_10k: {
+    name: "¥ / 万token", desc: "人民币，直观感受一分钱",
+    preview: "¥0.0426/万token",
+  },
+  cny_per_1m: {
+    name: "¥ / 百万token", desc: "人民币，官方口径",
+    preview: "¥4.26/百万token",
+  },
+};
+
 // ----------------------------------------------------------------------
 // 状态管理
 // ----------------------------------------------------------------------
-let choices = { notification_style: 'clean', terminal_style: 'log', window_theme: 'light' };
+let choices = { notification_style: 'clean', terminal_style: 'log', window_theme: 'light', price_unit: 'auto' };
 
 function render() {
   renderList('notif-list', NOTIFICATION_STYLES, choices.notification_style, 'notification_style', renderNotifCard);
   renderList('term-list', TERMINAL_STYLES, choices.terminal_style, 'terminal_style', renderTermCard);
   renderList('theme-list', WINDOW_THEMES, choices.window_theme, 'window_theme', renderThemeCard);
+  renderList('unit-list', PRICE_UNITS, choices.price_unit, 'price_unit', renderUnitCard);
 }
 
 function renderList(containerId, styles, selectedKey, choiceKey, renderFn) {
@@ -232,6 +260,20 @@ function renderThemeCard(key, st, selected) {
   return div;
 }
 
+function renderUnitCard(key, st, selected) {
+  const div = document.createElement('div');
+  div.className = 'style-card' + (selected ? ' selected' : '');
+  div.innerHTML = `
+    <div class="style-name">${st.name} ${selected ? '<span class="check">✔</span>' : ''}</div>
+    <div class="style-desc">${st.desc}</div>
+    <div class="preview-label">价格显示预览 / Price preview</div>
+    <div style="background:#f8f8f8; border:1px solid #e0e0e0; border-radius:6px; padding:8px; font-family:Consolas,monospace; font-size:12px; color:#333;">
+      ${st.preview}
+    </div>
+  `;
+  return div;
+}
+
 // ----------------------------------------------------------------------
 // 保存配置
 // ----------------------------------------------------------------------
@@ -240,6 +282,7 @@ function saveConfig() {
     notification_style: choices.notification_style,
     terminal_style: choices.terminal_style,
     window_theme: choices.window_theme,
+    price_unit: choices.price_unit,
   };
   // 尝试用浏览器下载方式保存 config.json
   const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
