@@ -8,6 +8,9 @@ price_history.json
 monitor.log
 config.json
 
+# 构建产物（安装包由 build_release.py 生成，通过 GitHub Release 分发）
+dist/
+
 # 编辑器 / OS
 .vscode/
 .idea/

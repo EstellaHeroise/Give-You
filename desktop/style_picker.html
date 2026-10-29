@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Price Alert — 风格选择器 / Style Picker</title>
+<style>
+  :root { --bg: #f5f5f7; --fg: #1a1a1a; --card: #ffffff; --muted: #86868b; --accent: #4caf50; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--fg); padding: 24px;
+  }
+  .header { text-align: center; margin-bottom: 20px; }
+  .header h1 { font-size: 26px; font-weight: 700; }
+  .header p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+
+  .sections { display: flex; gap: 20px; flex-wrap: wrap; }
+  .section { flex: 1 1 300px; background: var(--card); border-radius: 14px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+  .section-title { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+  .section-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+
+  .style-list { display: flex; flex-direction: column; gap: 10px; }
+  .style-card {
+    border: 2px solid #e5e5e5; border-radius: 10px; padding: 10px;
+    cursor: pointer; transition: all .15s ease; background: #fff;
+  }
+  .style-card:hover { border-color: #b0b0b0; }
+  .style-card.selected { border-color: var(--accent); background: #f0f9f0; box-shadow: 0 0 0 1px var(--accent); }
+  .style-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .style-desc { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .check { color: var(--accent); font-weight: 700; }
+
+  .preview-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 8px 0 4px; }
+
+  /* 通知弹窗两种方式预览 */
+  .native-preview { border: 1px solid #ccc; border-radius: 8px; overflow: hidden; background: #f0f0f0; }
+  .native-title { font-size: 11px; font-weight: 700; padding: 5px 8px; background: #e8e8e8; }
+  .native-body { font-size: 11px; padding: 8px; }
+  .native-btn { text-align: center; font-size: 11px; padding: 4px; background: #e0e0e0; border-top: 1px solid #ccc; font-weight: 600; }
+  .custom-preview { border-radius: 8px; overflow: hidden; border: 1px solid; }
+  .custom-title { font-size: 12px; font-weight: 700; padding: 6px 10px; }
+  .custom-body { font-size: 11px; padding: 8px 10px; line-height: 1.5; }
+
+  .term-preview { background: #111; border-radius: 8px; padding: 8px; font-family: Consolas, monospace; font-size: 11px; line-height: 1.5; }
+  .theme-preview { border-radius: 8px; padding: 10px; border: 1px solid; }
+
+  .btn-bar { text-align: center; margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 16px; }
+  .save-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 12px 36px; font-size: 16px; font-weight: 700; cursor: pointer;
+    transition: transform .1s ease;
+  }
+  .save-btn:hover { transform: scale(1.03); }
+  .save-btn:active { transform: scale(.97); }
+  #status { font-size: 14px; color: var(--accent); font-weight: 600; min-height: 20px; }
+  .tip { font-size: 12px; color: var(--muted); margin-top: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎨 DeepSeek Price Alert — 风格选择器</h1>
+  <p>点击卡片选中，然后点「保存配置」/ Click to select, then click Save</p>
+</div>
+
+<div class="sections">
+  <!-- ① 通知弹窗 -->
+  <div class="section">
+    <div class="section-title">① 通知弹窗风格</div>
+    <div class="section-sub">同时预览「系统原生」与「自定义风格」两种</div>
+    <div class="style-list" id="notif-list"></div>
+  </div>
+
+  <!-- ② 终端输出 -->
+  <div class="section">
+    <div class="section-title">② 终端输出风格</div>
+    <div class="section-sub">主脚本在命令行里的排版</div>
+    <div class="style-list" id="term-list"></div>
+  </div>
+
+  <!-- ③ 窗口主题 -->
+  <div class="section">
+    <div class="section-title">③ 窗口主题风格</div>
+    <div class="section-sub">未来扩展 GUI 时的深浅色主题</div>
+    <div class="style-list" id="theme-list"></div>
+  </div>
+
+  <!-- ④ 价格显示单位 -->
+  <div class="section">
+    <div class="section-title">④ 价格显示单位</div>
+    <div class="section-sub">提醒与历史记录里的价格单位</div>
+    <div class="style-list" id="unit-list"></div>
+  </div>
+</div>
+
+<div class="btn-bar">
+  <button class="save-btn" onclick="saveConfig()">💾 保存配置 / Save</button>
+  <span id="status"></span>
+</div>
+
+<div class="tip">
+  保存后会把风格写入 <code>config.json</code>。若浏览器阻止下载，可手动把下方内容存为 config.json。
+</div>
+
+<script>
+// ----------------------------------------------------------------------
+// 风格数据（与 style_preview.html 一致）
+// ----------------------------------------------------------------------
+const NOTIFICATION_STYLES = {
+  clean: {
+    name: "简洁 Clean", desc: "黑白灰，极简",
+    title: "DeepSeek 降价提醒", titleBg: "#333333", titleFg: "#ffffff",
+    bg: "#f5f5f5", fg: "#222222", border: "#cccccc",
+    msg: "deepseek-flash output_offpeak\n$1.2 -> $0.6 (-50.0%)\n现价 ¥0.0426/万token",
+  },
+  playful: {
+    name: "活泼 Playful", desc: "彩色 + emoji",
+    title: "🔥 DeepSeek 大额降价!", titleBg: "#ff8c00", titleFg: "#ffffff",
+    bg: "#fff7e6", fg: "#5a3e00", border: "#ffb84d",
+    msg: "📉 deepseek-flash output\n$1.2 → $0.6 (-50%)\n现价 ¥0.0426/万token 🎉",
+  },
+  minimal: {
+    name: "极简 Minimal", desc: "留白，细线条",
+    title: "DeepSeek 降价提醒", titleBg: "#111111", titleFg: "#ffffff",
+    bg: "#ffffff", fg: "#111111", border: "#eeeeee",
+    msg: "deepseek-flash output_offpeak\n$1.2 -> $0.6 (-50.0%)\n现价 ¥0.0426/万token",
+  },
+  pro: {
+    name: "专业 Pro", desc: "深蓝，稳重",
+    title: "DeepSeek API 价格调整", titleBg: "#0f1720", titleFg: "#9fc3e8",
+    bg: "#1e2a3a", fg: "#e8eef5", border: "#3d5873",
+    msg: "deepseek-flash output_offpeak\n$1.2 -> $0.6 (-50.0%)\n现价 ¥0.0426/万token",
+  },
+};
+
+const TERMINAL_STYLES = {
+  log: {
+    name: "日志 Log", desc: "[时间] 级别 消息",
+    lines: ["[2026-10-30 09:00:00] 价格无下降变化", "[2026-10-30 09:00:00] 检查完成"],
+    color: "#d4d4d4",
+  },
+  table: {
+    name: "表格 Table", desc: "对齐的列，紧凑",
+    lines: ["| 模型            | 输出价                |", "| deepseek-flash  | $0.6/1M  ¥0.0426/万  |", "| deepseek-v4-pro | $1.98/1M ¥0.1406/万  |"],
+    color: "#d4d4d4",
+  },
+  color: {
+    name: "彩色 Color", desc: "绿✓ 红✗ 黄!",
+    lines: ["✓ deepseek-flash 无变化", "📉 发现降价: -50% 🔥", "✓ 检查完成"],
+    color: "#4caf50",
+  },
+  compact: {
+    name: "紧凑 Compact", desc: "无时间戳，最短",
+    lines: ["no price drop", "check finished"],
+    color: "#d4d4d4",
+  },
+};
+
+const WINDOW_THEMES = {
+  light: { name: "浅色 Light", desc: "白底深字", bg: "#f0f0f0", fg: "#1a1a1a", card: "#ffffff", border: "#dddddd" },
+  dark: { name: "深色 Dark", desc: "黑底浅字", bg: "#1e1e1e", fg: "#e0e0e0", card: "#2d2d2d", border: "#444444" },
+  system: { name: "跟随系统 System", desc: "自动匹配深浅", bg: "#f0f0f0", fg: "#1a1a1a", card: "#ffffff", border: "#dddddd" },
+  blue: { name: "蓝调 Blue", desc: "深蓝沉稳", bg: "#0f1720", fg: "#dbeafe", card: "#1e2a3a", border: "#2d4a6a" },
+};
+
+// 价格显示单位 / Price display units
+const PRICE_UNITS = {
+  auto: {
+    name: "自动 Auto", desc: "同时显示美元和人民币",
+    preview: "$0.6/1M = ¥0.0426/万token",
+  },
+  usd_per_1m: {
+    name: "$ / 百万token", desc: "官方美元口径",
+    preview: "$0.6/1M",
+  },
+  cny_per_10k: {
+    name: "¥ / 万token", desc: "人民币，直观感受一分钱",
+    preview: "¥0.0426/万token",
+  },
+  cny_per_1m: {
+    name: "¥ / 百万token", desc: "人民币，官方口径",
+    preview: "¥4.26/百万token",
+  },
+};
+
+// ----------------------------------------------------------------------
+// 状态管理
+// ----------------------------------------------------------------------
+let choices = { notification_style: 'clean', terminal_style: 'log', window_theme: 'light', price_unit: 'auto' };
+
+function render() {
+  renderList('notif-list', NOTIFICATION_STYLES, choices.notification_style, 'notification_style', renderNotifCard);
+  renderList('term-list', TERMINAL_STYLES, choices.terminal_style, 'terminal_style', renderTermCard);
+  renderList('theme-list', WINDOW_THEMES, choices.window_theme, 'window_theme', renderThemeCard);
+  renderList('unit-list', PRICE_UNITS, choices.price_unit, 'price_unit', renderUnitCard);
+}
+
+function renderList(containerId, styles, selectedKey, choiceKey, renderFn) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  Object.entries(styles).forEach(([key, st]) => {
+    const card = renderFn(key, st, selectedKey === key);
+    card.addEventListener('click', () => {
+      choices[choiceKey] = key;
+      render();
+    });
+    container.appendChild(card);
+  });
+}
+
+function renderNotifCard(key, st, selected) {
+  const div = document.createElement('div');
+  div.className = 'style-card' + (selected ? ' selected' : '');
+  div.innerHTML = `
+    <div class="style-name">${st.name} ${selected ? '<span class="check">✔</span>' : ''}</div>
+    <div class="style-desc">${st.desc}</div>
+    <div class="preview-label">系统原生弹窗 / Native</div>
+    <div class="native-preview">
+      <div class="native-title">DeepSeek 降价提醒</div>
+      <div class="native-body">deepseek-flash output_offpeak: $1.2 -> $0.6 (-50.0%)</div>
+      <div class="native-btn">确定</div>
+    </div>
+    <div class="preview-label">自定义风格弹窗 / Custom</div>
+    <div class="custom-preview" style="border-color:${st.border}; background:${st.bg};">
+      <div class="custom-title" style="background:${st.titleBg}; color:${st.titleFg};">${st.title}</div>
+      <div class="custom-body" style="color:${st.fg};">${st.msg.replace(/\n/g, '<br>')}</div>
+    </div>
+  `;
+  return div;
+}
+
+function renderTermCard(key, st, selected) {
+  const div = document.createElement('div');
+  div.className = 'style-card' + (selected ? ' selected' : '');
+  div.innerHTML = `
+    <div class="style-name">${st.name} ${selected ? '<span class="check">✔</span>' : ''}</div>
+    <div class="style-desc">${st.desc}</div>
+    <div class="preview-label">终端输出 / Terminal</div>
+    <div class="term-preview" style="color:${st.color}">
+      ${st.lines.map(l => `<div>${l}</div>`).join('')}
+    </div>
+  `;
+  return div;
+}
+
+function renderThemeCard(key, st, selected) {
+  const div = document.createElement('div');
+  div.className = 'style-card' + (selected ? ' selected' : '');
+  div.innerHTML = `
+    <div class="style-name">${st.name} ${selected ? '<span class="check">✔</span>' : ''}</div>
+    <div class="style-desc">${st.desc}</div>
+    <div class="preview-label">窗口主题预览 / Theme</div>
+    <div class="theme-preview" style="background:${st.card}; border-color:${st.border}; color:${st.fg};">
+      <div style="font-weight:700; margin-bottom:4px;">DeepSeek 价格提醒</div>
+      <div style="font-family:Consolas,monospace; font-size:11px;">deepseek-flash: $0.6/1M</div>
+      <div style="font-family:Consolas,monospace; font-size:11px;">¥0.0426/万token</div>
+    </div>
+  `;
+  return div;
+}
+
+function renderUnitCard(key, st, selected) {
+  const div = document.createElement('div');
+  div.className = 'style-card' + (selected ? ' selected' : '');
+  div.innerHTML = `
+    <div class="style-name">${st.name} ${selected ? '<span class="check">✔</span>' : ''}</div>
+    <div class="style-desc">${st.desc}</div>
+    <div class="preview-label">价格显示预览 / Price preview</div>
+    <div style="background:#f8f8f8; border:1px solid #e0e0e0; border-radius:6px; padding:8px; font-family:Consolas,monospace; font-size:12px; color:#333;">
+      ${st.preview}
+    </div>
+  `;
+  return div;
+}
+
+// ----------------------------------------------------------------------
+// 保存配置
+// ----------------------------------------------------------------------
+function saveConfig() {
+  const cfg = {
+    notification_style: choices.notification_style,
+    terminal_style: choices.terminal_style,
+    window_theme: choices.window_theme,
+    price_unit: choices.price_unit,
+  };
+  // 尝试用浏览器下载方式保存 config.json
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'config.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  const status = document.getElementById('status');
+  status.textContent = `✅ 已生成 config.json！请保存到项目文件夹 (${choices.notification_style} / ${choices.terminal_style} / ${choices.window_theme})`;
+}
+
+render();
+</script>
+
+</body>
+</html>

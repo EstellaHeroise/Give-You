@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Price Alert — 风格预览 / Style Preview</title>
+<style>
+  :root { --bg: #f5f5f7; --fg: #1a1a1a; --card: #ffffff; --muted: #86868b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--fg);
+    padding: 24px;
+  }
+  .header { text-align: center; margin-bottom: 28px; }
+  .header h1 { font-size: 26px; font-weight: 700; }
+  .header p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+  .section { margin-bottom: 36px; }
+  .section-title {
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 4px; padding-left: 4px;
+    border-left: 4px solid #4caf50; padding-left: 12px;
+  }
+  .section-sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; padding-left: 16px; }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+  .card-body { padding: 16px; }
+  .card-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .card-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .preview-label {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .5px;
+    margin: 10px 0 4px;
+  }
+  /* 系统弹窗预览 = 模拟一个 Windows 消息框 */
+  .native-preview {
+    border: 1px solid #ccc; border-radius: 8px; overflow: hidden;
+    background: #f0f0f0; box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  }
+  .native-title { font-size: 12px; font-weight: 700; padding: 6px 10px; background: #e8e8e8; }
+  .native-body { font-size: 12px; padding: 10px; background: #f0f0f0; }
+  .native-btn {
+    text-align: center; font-size: 12px; padding: 5px;
+    background: #e0e0e0; border-top: 1px solid #ccc; font-weight: 600;
+  }
+  /* 自定义弹窗预览 = 按风格渲染 */
+  .custom-preview {
+    border-radius: 10px; overflow: hidden; border: 1px solid;
+  }
+  .custom-title { font-size: 13px; font-weight: 700; padding: 8px 12px; }
+  .custom-body { font-size: 12px; padding: 10px 12px; line-height: 1.5; }
+  .tag { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #4caf50; color: #fff; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎨 DeepSeek Price Alert — 风格预览</h1>
+  <p>三种风格维度 × 每种 4 款风格，同时展示「系统原生弹窗」和「自定义风格弹窗」两种通知方式</p>
+</div>
+
+<!-- ① 通知弹窗风格 -->
+<div class="section">
+  <div class="section-title">① 通知弹窗风格</div>
+  <div class="section-sub">展示两种通知方式：系统原生弹窗（上）与自定义风格弹窗（下）</div>
+  <div class="cards" id="notif-cards"></div>
+</div>
+
+<!-- ② 终端输出风格 -->
+<div class="section">
+  <div class="section-title">② 终端输出风格</div>
+  <div class="section-sub">主脚本在命令行里的输出排版</div>
+  <div class="cards" id="term-cards"></div>
+</div>
+
+<!-- ③ 窗口主题风格 -->
+<div class="section">
+  <div class="section-title">③ 窗口主题风格</div>
+  <div class="section-sub">小窗口/预览界面的深浅色主题（未来扩展 GUI 时用）</div>
+  <div class="cards" id="theme-cards"></div>
+</div>
+
+<script>
+// ----------------------------------------------------------------------
+// 风格数据 / Style data
+// ----------------------------------------------------------------------
+const NOTIFICATION_STYLES = {
+  clean: {
+    name: "简洁 Clean", desc: "黑白灰，极简，信息清楚",
+    title: "DeepSeek 降价提醒", titleBg: "#333333", titleFg: "#ffffff",
+    bg: "#f5f5f5", fg: "#222222", border: "#cccccc",
+    msg: "deepseek-flash output_offpeak\n$1.2 -> $0.6 (-50.0%)\n现价 ¥0.0426/万token",
+    emoji: false,
+  },
+  playful: {
+    name: "活泼 Playful", desc: "彩色 + emoji，轻松醒目",
+    title: "🔥 DeepSeek 大额降价!", titleBg: "#ff8c00", titleFg: "#ffffff",
+    bg: "#fff7e6", fg: "#5a3e00", border: "#ffb84d",
+    msg: "📉 deepseek-flash output\n$1.2 → $0.6 (-50%)\n现价 ¥0.0426/万token 🎉",
+    emoji: true,
+  },
+  minimal: {
+    name: "极简 Minimal", desc: "大量留白，极细线条",
+    title: "DeepSeek 降价提醒", titleBg: "#111111", titleFg: "#ffffff",
+    bg: "#ffffff", fg: "#111111", border: "#eeeeee",
+    msg: "deepseek-flash output_offpeak\n$1.2 -> $0.6 (-50.0%)\n现价 ¥0.0426/万token",
+    emoji: false,
+  },
+  pro: {
+    name: "专业 Pro", desc: "深蓝底色，正式稳重",
+    title: "DeepSeek API 价格调整", titleBg: "#0f1720", titleFg: "#9fc3e8",
+    bg: "#1e2a3a", fg: "#e8eef5", border: "#3d5873",
+    msg: "deepseek-flash output_offpeak\n$1.2 -> $0.6 (-50.0%)\n现价 ¥0.0426/万token",
+    emoji: false,
+  },
+};
+
+const TERMINAL_STYLES = {
+  log: {
+    name: "日志 Log", desc: "[时间] 级别 消息",
+    lines: [
+      "[2026-10-30 09:00:00] 价格无下降变化",
+      "[2026-10-30 09:00:00] 检查完成",
+    ],
+    color: "#d4d4d4",
+  },
+  table: {
+    name: "表格 Table", desc: "对齐的列，紧凑清晰",
+    lines: [
+      "| 模型            | 输出价                |",
+      "| deepseek-flash  | $0.6/1M  ¥0.0426/万  |",
+      "| deepseek-v4-pro | $1.98/1M ¥0.1406/万  |",
+    ],
+    color: "#d4d4d4",
+  },
+  color: {
+    name: "彩色 Color", desc: "绿✓ 红✗ 黄! 多彩输出",
+    lines: [
+      "✓ deepseek-flash 无变化",
+      "📉 发现降价: -50% 🔥",
+      "✓ 检查完成",
+    ],
+    color: "#4caf50",
+  },
+  compact: {
+    name: "紧凑 Compact", desc: "无时间戳，最少字符",
+    lines: ["no price drop", "check finished"],
+    color: "#d4d4d4",
+  },
+};
+
+const WINDOW_THEMES = {
+  light: { name: "浅色 Light", desc: "白底深字，明亮清爽", bg: "#f0f0f0", fg: "#1a1a1a", card: "#ffffff", border: "#dddddd" },
+  dark: { name: "深色 Dark", desc: "黑底浅字，护眼低调", bg: "#1e1e1e", fg: "#e0e0e0", card: "#2d2d2d", border: "#444444" },
+  system: { name: "跟随系统 System", desc: "自动匹配系统深浅色", bg: "#f0f0f0", fg: "#1a1a1a", card: "#ffffff", border: "#dddddd" },
+  blue: { name: "蓝调 Blue", desc: "深蓝主题，沉稳专业", bg: "#0f1720", fg: "#dbeafe", card: "#1e2a3a", border: "#2d4a6a" },
+};
+
+// ----------------------------------------------------------------------
+// 渲染函数 / Render functions
+// ----------------------------------------------------------------------
+function renderNotifCard(key, st) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <div class="card-body">
+      <div class="card-name">${st.name}</div>
+      <div class="card-desc">${st.desc}</div>
+
+      <div class="preview-label">系统原生弹窗 / System native</div>
+      <div class="native-preview">
+        <div class="native-title">DeepSeek 降价提醒</div>
+        <div class="native-body">deepseek-flash output_offpeak: $1.2 -> $0.6 (-50.0%)</div>
+        <div class="native-btn">确定</div>
+      </div>
+
+      <div class="preview-label">自定义风格弹窗 / Custom styled</div>
+      <div class="custom-preview" style="border-color:${st.border}; background:${st.bg};">
+        <div class="custom-title" style="background:${st.titleBg}; color:${st.titleFg};">${st.title}</div>
+        <div class="custom-body" style="color:${st.fg};">${st.msg.replace(/\n/g, '<br>')}</div>
+      </div>
+    </div>
+  `;
+  return el;
+}
+
+function renderTermCard(key, st) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <div class="card-body">
+      <div class="card-name">${st.name}</div>
+      <div class="card-desc">${st.desc}</div>
+      <div class="preview-label">终端输出 / Terminal</div>
+      <div style="background:#111; border-radius:8px; padding:10px; font-family:Consolas,monospace; font-size:12px; color:${st.color}; line-height:1.5;">
+        ${st.lines.map(l => `<div>${l}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  return el;
+}
+
+function renderThemeCard(key, st) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <div class="card-body">
+      <div class="card-name">${st.name}</div>
+      <div class="card-desc">${st.desc}</div>
+      <div class="preview-label">窗口主题预览 / Theme</div>
+      <div style="background:${st.card}; border:1px solid ${st.border}; border-radius:8px; padding:12px; color:${st.fg};">
+        <div style="font-weight:700; margin-bottom:6px;">DeepSeek 价格提醒</div>
+        <div style="font-family:Consolas,monospace; font-size:12px;">deepseek-flash: $0.6/1M</div>
+        <div style="font-family:Consolas,monospace; font-size:12px;">¥0.0426/万token</div>
+      </div>
+    </div>
+  `;
+  return el;
+}
+
+// 渲染全部
+const notifCards = document.getElementById('notif-cards');
+Object.entries(NOTIFICATION_STYLES).forEach(([k, s]) => notifCards.appendChild(renderNotifCard(k, s)));
+
+const termCards = document.getElementById('term-cards');
+Object.entries(TERMINAL_STYLES).forEach(([k, s]) => termCards.appendChild(renderTermCard(k, s)));
+
+const themeCards = document.getElementById('theme-cards');
+Object.entries(WINDOW_THEMES).forEach(([k, s]) => themeCards.appendChild(renderThemeCard(k, s)));
+</script>
+
+</body>
+</html>

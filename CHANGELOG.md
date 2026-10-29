@@ -91,6 +91,28 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.5] - 2026-10-30
+
+### 新增 / Added
+
+- 📦 **二合一安装包**：一个 ZIP 安装包同时包含「桌面通用版」与「WorkBuddy 适配版」，下载一次即可选择安装
+  - All-in-one installer ZIP bundling both the Desktop Edition and the WorkBuddy Edition.
+- 🖥️ **图形安装向导**（`installer.py` + `installer.html` + `install.bat`）：双击 `install.bat` 自动打开本地网页，展示两个版本卡片供选择，一键完成安装
+  - GUI installer: a local web page (`http://127.0.0.1:8765`) with two edition cards; one-click install.
+  - 可选「开机自启」「同时安装桌面联动程序」「自定义安装目录」等选项
+- 🤖 **WorkBuddy Skill 版**：新增 `SKILL.md`，安装为 WorkBuddy 用户级 skill（`~/.workbuddy/skills/deepseek-price-alert`），对话中直接触发「DeepSeek 降价了吗」等指令
+  - WorkBuddy Skill edition: installs into WorkBuddy's user skills directory and can be triggered in chat.
+- 🔧 **打包脚本**（`build_release.py`）：一条命令生成 `dist/deepseek-price-alert-setup-<version>.zip`
+  - Release packaging script: build the all-in-one ZIP with one command.
+
+### 结构说明 / Structure
+
+- `desktop/`：桌面通用版文件（主脚本 + 风格页 + 文档）
+- `skill/`：WorkBuddy 版文件（SKILL.md + 主脚本 + 风格页）
+- 两个版本安装目录完全分离，互不冲突（桌面版 `~/deepseek-price-alert/desktop`，WorkBuddy 版 `~/.workbuddy/skills/deepseek-price-alert`）
+
+---
+
 ## 🔮 后续计划 / Planned
 
 - [ ] 推送 GitHub 开源（替换 README / LICENSE 中的 `<YOUR_GITHUB_USERNAME>`）

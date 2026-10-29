@@ -9,6 +9,37 @@ A zero-dependency, cross-platform alert tool for DeepSeek official API price dro
 
 ---
 
+## 📦 二合一安装包 / All-in-One Installer
+
+**一个安装包，两个版本，下载一次即可选择安装。**
+
+The installer bundles both editions — download once, choose your edition during setup.
+
+| 版本 Edition | 适用场景 | 安装位置 |
+|---|---|---|
+| 🖥️ **桌面通用版** / Desktop | 独立运行的桌面程序，不依赖任何 AI 平台 | `~/deepseek-price-alert/desktop`（可自定义） |
+| 🤖 **WorkBuddy 适配版** / WorkBuddy | 已安装 WorkBuddy 的用户，对话中直接触发检查 | `~/.workbuddy/skills/deepseek-price-alert` |
+
+### 使用方法 / How to install
+
+1. 下载 `deepseek-price-alert-setup-<version>.zip` 并解压
+2. 双击 `install.bat`（Windows），或运行 `python installer.py`
+3. 浏览器自动打开图形安装向导
+4. 选择 **桌面通用版** 或 **WorkBuddy 适配版**（可勾选开机自启、同时安装桌面联动程序等选项）
+5. 点击「开始安装」，自动完成文件复制与配置
+
+> 安装向导为本地网页（`http://127.0.0.1:8765`），不上传任何数据。
+
+### WorkBuddy 适配版使用方式
+
+安装后，在 WorkBuddy 对话中输入以下指令即可触发：
+
+- 「DeepSeek 降价了吗？」→ 自动运行 `--once` 检查
+- 「查看 DeepSeek 价格历史」→ 自动运行 `--history`
+- 「设置 DeepSeek 开机提醒」→ 自动运行 `--setup-startup`
+
+---
+
 ## ✨ 特性 / Features
 
 - 🎯 **只监控 DeepSeek 官方 API 定价**（`api-docs.deepseek.com/quick_start/pricing`），不是第三方转售平台
@@ -198,6 +229,14 @@ deepseek-price-alert/
 ├── config.json               # 风格配置(由选择器生成) / Style config (generated)
 ├── price_history.json        # 价格历史快照（自动生成）/ Price history (auto-generated)
 ├── monitor.log               # 运行日志 / Log file
+├── installer.py              # 二合一安装向导(后端) / All-in-one installer (backend)
+├── installer.html            # 图形安装页面(前端) / Installer GUI page
+├── install.bat               # Windows 双击启动安装向导 / Installer launcher (Windows)
+├── build_release.py          # 打包安装包脚本 / Release packaging script
+├── desktop/                  # 桌面通用版文件(打包用) / Desktop edition files (for packaging)
+├── skill/                    # WorkBuddy 版文件(打包用) / WorkBuddy edition skill files
+├── dist/                     # 生成的安装包 / Built release zips
+├── CHANGELOG.md              # 更新日志 / Changelog
 ├── README.md                 # 本文档 / This doc
 └── LICENSE                   # MIT 协议
 ```
