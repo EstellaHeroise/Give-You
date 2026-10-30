@@ -156,6 +156,27 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.8.0] - 2026-10-31
+
+### 新增 / Added
+
+- 🧹 **安装后自动删除安装包**：安装向导新增「安装完成后自动删除下载的安装包」选项（默认勾选），安装成功后可自动删除 ZIP 与解压目录，不留垃圾文件。
+  - Auto-cleanup: after a successful install, the installer can delete the downloaded ZIP and its unpacked folder (optional, on by default).
+- 🏷️ **源码原创声明**：主脚本开头加入定稿死代码声明「本作品由 久禾 原创，二改后请告知作者。 · 第一版 · 2026.10.30」
+  - Original-work notice added at the top of the main script.
+
+### 变更 / Changed
+
+- 版本号同步升级至 v0.8.0（主脚本 / 安装向导 / 打包脚本 / SKILL.md）。
+- `install.bat` 启动时自动定位并传递安装包 ZIP 路径给安装器（通过环境变量 `DEEPSEEK_ALERT_SETUP_ZIP`），安装成功后精确删除该 ZIP。
+
+### 说明 / Notes
+
+- 自动清理功能受保护：不会误删用户主目录、源码项目目录；仅在安装成功后执行。
+- 用户可在安装界面取消勾选「安装完成后自动删除下载的安装包」来保留安装包。
+
+---
+
 ## 🔮 后续计划 / Planned
 
 - [ ] 推送 GitHub 开源（替换 README / LICENSE 中的 `<YOUR_GITHUB_USERNAME>`）

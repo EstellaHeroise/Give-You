@@ -6,6 +6,13 @@ rem ============================================================
 setlocal
 cd /d "%~dp0"
 
+rem 自动定位安装包 ZIP（用于安装后自动删除）
+rem 优先找解压目录上一级（通常是"下载"文件夹）里本版本的 zip
+set "DEEPSEEK_ALERT_SETUP_ZIP="
+for %%f in ("%~dp0..\deepseek-price-alert-setup-*.zip") do (
+  if not defined DEEPSEEK_ALERT_SETUP_ZIP set "DEEPSEEK_ALERT_SETUP_ZIP=%%~f"
+)
+
 rem 尝试找 python
 set "PY="
 where python >nul 2>nul && set "PY=python"

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# =====================================================================
+# 本作品由 久禾 原创，二改后请告知作者。 · 第一版 · 2026.10.30
+# =====================================================================
 """
 installer.py — DeepSeek 降价提醒工具 二合一安装向导
 =====================================================
@@ -37,7 +40,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 
 # GitHub 仓库地址（开源后替换为真实用户名）
 GITHUB_REPO = "<YOUR_GITHUB_USERNAME>/deepseek-price-alert"
@@ -62,6 +65,9 @@ LOG_PATH = Path(tempfile.gettempdir()) / "deepseek_installer.log"
 
 # 页面文件
 PAGE_FILE = INSTALLER_DIR / "installer.html"
+
+# 安装包 ZIP 路径的环境变量名（install.bat 启动时设置，供安装后自动删除）
+SETUP_ZIP_ENV = "DEEPSEEK_ALERT_SETUP_ZIP"
 
 
 # --------------------------------------------------------------------------
@@ -131,6 +137,64 @@ def copy_tree(src: Path, dst: Path) -> None:
 def ensure_python() -> str:
     """返回可用的 python 解释器路径."""
     return sys.executable
+
+
+def cleanup_installer(remove_zip: bool = True) -> dict:
+    """
+    安装完成后自动清理安装包：
+    - 删除当前解压目录（即 INSTALLER_DIR 本身，包含 installer.py/html/desktop/skill 等）
+    - 删除原 ZIP 安装包（优先使用 install.bat 通过环境变量 DEEPSEEK_ALERT_SETUP_ZIP 传入的路径，
+      否则回退为查找解压目录上一级的 deepseek-price-alert-setup-*.zip）。
+    注意：此函数应在安装逻辑成功完成后调用。
+    """
+    cleaned = {"unpacked_dir": None, "zip": None}
+
+    # 1. 记录并删除解压目录（安装包的"临时家"）
+    try:
+        unpacked = INSTALLER_DIR
+        if unpacked.exists():
+            # 保护：不要误删用户主目录 / 项目源码目录
+            # 仅当目录名是 "deepseek-price-alert-setup-*" 或包含 installer.py 时才清理
+            is_setup_dir = (
+                unpacked.name.startswith("deepseek-price-alert-setup-")
+                or (unpacked / "installer.py").exists()
+            )
+            home = Path.home().resolve()
+            if is_setup_dir and unpacked.resolve() != home and unpacked.resolve() != Path.cwd().resolve():
+                shutil.rmtree(unpacked, ignore_errors=True)
+                cleaned["unpacked_dir"] = str(unpacked)
+                log(f"已删除解压目录 / Removed unpacked dir: {unpacked}")
+    except Exception as exc:
+        log(f"清理解压目录失败 / Failed to remove unpacked dir: {exc}")
+
+    # 2. 删除原 ZIP 安装包
+    if remove_zip:
+        try:
+            # 优先使用环境变量指定的 ZIP 路径（install.bat 传入）
+            env_zip = os.environ.get(SETUP_ZIP_ENV, "").strip()
+            if env_zip:
+                z = Path(env_zip).expanduser().resolve()
+                if z.exists() and z.suffix.lower() == ".zip":
+                    try:
+                        z.unlink()
+                        cleaned["zip"] = str(z)
+                        log(f"已删除安装包 / Removed installer zip: {z}")
+                    except OSError as exc:
+                        log(f"删除安装包失败 / Failed to remove zip {z}: {exc}")
+            # 回退：查找解压目录上一级的 zip
+            if not cleaned["zip"]:
+                parent = INSTALLER_DIR.parent
+                for z in sorted(parent.glob("deepseek-price-alert-setup-*.zip")):
+                    try:
+                        z.unlink()
+                        cleaned["zip"] = str(z)
+                        log(f"已删除安装包 / Removed installer zip: {z}")
+                    except OSError as exc:
+                        log(f"删除安装包失败 / Failed to remove zip {z}: {exc}")
+        except Exception as exc:
+            log(f"清理安装包失败 / Failed to clean zip: {exc}")
+
+    return cleaned
 
 
 # --------------------------------------------------------------------------
@@ -299,6 +363,7 @@ class InstallerHandler(BaseHTTPRequestHandler):
         edition = payload.get("edition", "")
         enable_startup = bool(payload.get("enable_startup", False))
         also_desktop = bool(payload.get("also_desktop", False))
+        cleanup = bool(payload.get("cleanup", True))
         custom_dir = (payload.get("install_dir") or "").strip()
 
         # 校验版本选择
@@ -320,6 +385,12 @@ class InstallerHandler(BaseHTTPRequestHandler):
                 result = install_desktop(target_root, enable_startup)
             else:
                 result = install_workbuddy(target_root, also_desktop, enable_startup)
+
+            # 安装成功后，若用户选择"自动删除安装包"，则清理 ZIP 与解压目录
+            cleaned = {}
+            if cleanup:
+                cleaned = cleanup_installer(remove_zip=True)
+                result["cleaned"] = cleaned
 
             self._send_json({"ok": True, "result": result})
         except Exception as exc:
@@ -348,6 +419,9 @@ def main() -> int:
     log(f"版本 / Version: {VERSION}")
     log(f"安装向导地址 / URL: {url}")
     log("在页面中选择「桌面通用版」或「WorkBuddy 适配版」完成安装。")
+    env_zip = os.environ.get(SETUP_ZIP_ENV, "").strip()
+    if env_zip:
+        log(f"检测到安装包 / Installer zip: {env_zip}（安装完成后可选自动删除）")
     log("=" * 60)
 
     # 启动时检查是否有新版本

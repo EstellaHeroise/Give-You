@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# =====================================================================
+# 本作品由 久禾 原创，二改后请告知作者。 · 第一版 · 2026.10.30
+# =====================================================================
 """
 deepseek_price_alert.py — DeepSeek 官方 API 降价提醒工具
 Monitor DeepSeek official API pricing and alert you when prices drop.
@@ -36,7 +39,7 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 # 常量配置 / Constants
 # --------------------------------------------------------------------------
-__version__ = "0.7.0"  # 当前版本，用于自动更新检测 / Current version
+__version__ = "0.8.0"  # 当前版本，用于自动更新检测 / Current version
 
 # GitHub 仓库地址（开源后替换 <YOUR_GITHUB_USERNAME> 为真实用户名）
 # GitHub repo (replace <YOUR_GITHUB_USERNAME> after open-sourcing)

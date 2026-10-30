@@ -25,10 +25,12 @@ The installer bundles both editions — download once, choose your edition durin
 1. 下载 `deepseek-price-alert-setup-<version>.zip` 并解压
 2. 双击 `install.bat`（Windows），或运行 `python installer.py`
 3. 浏览器自动打开图形安装向导
-4. 选择 **桌面通用版** 或 **WorkBuddy 适配版**（可勾选开机自启、同时安装桌面联动程序等选项）
+4. 选择 **桌面通用版** 或 **WorkBuddy 适配版**（可勾选开机自启、同时安装桌面联动程序、安装后自动删除安装包等选项）
 5. 点击「开始安装」，自动完成文件复制与配置
+6. （默认开启）安装完成后自动删除下载的 ZIP 与解压目录，不留垃圾文件
 
 > 安装向导为本地网页（`http://127.0.0.1:8765`），不上传任何数据。
+> 若想保留安装包，在安装界面取消勾选「安装完成后自动删除下载的安装包」即可。
 
 ### WorkBuddy 适配版使用方式
 
@@ -55,6 +57,7 @@ The installer bundles both editions — download once, choose your edition durin
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
 - 💻 **命令行友好**：`--init`、`--once`、`--history`、`--version`、`--help`、`--check-update`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--remove-schedule`、`--status`
 - 🔄 **自动更新检测**：脚本与安装向导启动时自动检查 GitHub 最新版本，发现新版提示下载（配合 GitHub Releases 使用）
+- 🧹 **安装后自动清理**：安装完成后可自动删除下载的安装包（ZIP）与解压目录，省空间、不留垃圾文件（可在安装界面取消勾选）
 
 ---
 

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# =====================================================================
+# 本作品由 久禾 原创，二改后请告知作者。 · 第一版 · 2026.10.30
+# =====================================================================
 """
 build_release.py — 打包二合一安装包
 ====================================
@@ -79,7 +82,7 @@ def build(version: str) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="打包 DeepSeek 降价提醒 二合一安装包")
-    parser.add_argument("--version", default="0.7.0", help="版本号 (默认 0.7.0)")
+    parser.add_argument("--version", default="0.8.0", help="版本号 (默认 0.8.0)")
     args = parser.parse_args()
     build(args.version)
     return 0
