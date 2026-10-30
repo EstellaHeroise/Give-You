@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · 深浅色切换 — 风格样稿</title>
+<style>
+  /* ===== 主题变量 ===== */
+  :root{
+    --ink:#101010;
+    --paper:#fff;
+    --gray:#888;
+    --hairline:#e2e2e2;
+    --soft:#fafafa;
+    --text:#444;
+  }
+  body.light{
+    --ink:#101010;
+    --paper:#fff;
+    --gray:#888;
+    --hairline:#e2e2e2;
+    --soft:#fafafa;
+    --text:#444;
+  }
+  body{
+    --ink:#f2f2f2;
+    --paper:#0e0e0e;
+    --gray:#8a8a8a;
+    --hairline:#333;
+    --soft:#161616;
+    --text:#c0c0c0;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,"PingFang SC","Hiragino Sans GB",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    transition:background .25s,color .25s;
+  }
+  .container{max-width:1120px;margin:0 auto;padding:0 44px}
+
+  /* 顶栏 */
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:26px 0 20px}
+  .logo{font-size:17px;font-weight:600;letter-spacing:.35em}
+  .logo span{font-weight:300;color:var(--gray);letter-spacing:.2em;margin-left:8px}
+  .topbar-right{display:flex;align-items:center;gap:30px}
+  .nav{display:flex;gap:30px}
+  .nav a{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--ink);text-decoration:none}
+
+  /* 主题切换按钮：黑白极简 */
+  .theme-toggle{
+    display:flex;align-items:center;gap:10px;
+    border:1px solid var(--ink);
+    padding:6px 14px;
+    cursor:pointer;
+    background:var(--paper);
+    font-size:10px;letter-spacing:.25em;
+    color:var(--ink);
+    user-select:none;
+    transition:background .2s,color .2s;
+  }
+  .theme-toggle:hover{background:var(--ink);color:var(--paper)}
+  .theme-toggle .icon{display:inline-block;width:8px;height:8px;border-radius:50%;border:1px solid currentColor}
+  .theme-toggle .icon.half{background:currentColor}
+  [data-theme="dark"] .theme-toggle .icon{background:currentColor;border-color:currentColor}
+  [data-theme="dark"] .theme-toggle .icon.half{background:var(--paper);border-color:currentColor}
+
+  /* Hero */
+  .hero{position:relative;min-height:600px;display:flex;align-items:center;overflow:hidden;border-bottom:1px solid var(--ink)}
+  .hero-content{position:relative;z-index:5;max-width:480px;padding:80px 0}
+  .hero-label{font-size:10px;letter-spacing:.35em;text-transform:uppercase;color:var(--gray);display:flex;align-items:center;gap:12px;margin-bottom:30px}
+  .hero-label::before{content:"";width:30px;height:1px;background:var(--ink)}
+  .hero-content h1{font-size:36px;line-height:1.35;font-weight:500;letter-spacing:.04em}
+  .hero-content h1 b{font-weight:700}
+  .hero-sub{margin-top:22px;font-size:12px;color:var(--gray);letter-spacing:.15em;line-height:1.9}
+  .hero-sub strong{font-weight:600;color:var(--ink)}
+  .hero-sub .origin-note{margin-top:14px;font-size:11px;letter-spacing:.12em;color:var(--gray);line-height:1.9;border-top:1px solid var(--hairline);padding-top:14px;max-width:26em}
+
+  /* 星盘：颜色跟随主题 */
+  .dial{position:absolute;right:-160px;top:50%;transform:translateY(-50%);width:680px;height:680px;z-index:1;pointer-events:none}
+  .dial svg{width:100%;height:100%;display:block;overflow:visible}
+  .dial svg .s{stroke:var(--ink)}
+  .dial svg .f{fill:var(--ink)}
+  .dial svg .fp{fill:var(--paper)}
+  .dial svg .sf{stroke:var(--paper)}
+  .dial svg .t{fill:var(--ink)}
+
+  /* 区块标题 */
+  .section-head{display:flex;align-items:center;gap:16px;padding:30px 0 20px}
+  .section-head .no{font-size:10px;letter-spacing:.3em;color:var(--gray);font-family:"SF Mono","Courier New",monospace}
+  .section-head h2{font-size:13px;letter-spacing:.3em;text-transform:uppercase;font-weight:500}
+  .section-head .line{flex:1;height:1px;background:var(--hairline)}
+
+  /* 作品卡片 */
+  .works-list{border-top:1px solid var(--ink)}
+  .work-row{display:grid;grid-template-columns:88px 1fr auto;gap:32px;align-items:center;padding:30px 8px;border-bottom:1px solid var(--ink);cursor:pointer;transition:background .15s}
+  .work-row:hover{background:var(--soft)}
+  .work-row .deg{font-family:"SF Mono","Courier New",monospace;font-size:11px;letter-spacing:.15em;color:var(--gray)}
+  .work-row .info h3{font-size:17px;letter-spacing:.1em;margin-bottom:6px}
+  .work-row .info p{font-size:12px;color:var(--gray);letter-spacing:.05em}
+  .work-row .action{font-size:11px;letter-spacing:.25em;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:4px;pointer-events:none}
+
+  /* 详情区 */
+  .detail-panel{display:none;border-bottom:1px solid var(--ink);padding:56px 0}
+  .detail-panel.active{display:block}
+  .detail-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center}
+  .detail-art{border:1px solid var(--ink);padding:28px;display:flex;align-items:center;justify-content:center;min-height:300px;background:linear-gradient(var(--hairline) 1px,transparent 1px),linear-gradient(90deg,var(--hairline) 1px,transparent 1px);background-size:20px 20px}
+  .detail-art svg{stroke:var(--ink)}
+  .detail-art svg text{fill:var(--ink)}
+  .detail-info .tag{font-size:10px;letter-spacing:.3em;color:var(--gray);text-transform:uppercase;margin-bottom:14px}
+  .detail-info h3{font-size:26px;letter-spacing:.08em;margin-bottom:14px}
+  .detail-info .desc{font-size:13px;line-height:1.9;color:var(--text);margin-bottom:22px}
+  .detail-info .features{list-style:none;margin-bottom:28px;border-top:1px solid var(--ink)}
+  .detail-info .features li{font-size:12px;letter-spacing:.06em;padding:10px 0;border-bottom:1px solid var(--hairline);display:flex;gap:10px}
+  .detail-info .features li::before{content:"＋";color:var(--gray);font-family:"SF Mono",monospace}
+  .detail-links{display:flex;gap:16px;flex-wrap:wrap}
+  .detail-links a{font-size:11px;letter-spacing:.25em;color:var(--ink);text-decoration:none;border:1px solid var(--ink);padding:9px 18px;display:inline-block}
+  .detail-links a:hover{background:var(--ink);color:var(--paper)}
+  .detail-origin{margin-top:34px;font-size:10px;letter-spacing:.3em;color:var(--gray);border-top:1px solid var(--hairline);padding-top:16px}
+
+  /* 联系 */
+  .contact-grid{display:grid;grid-template-columns:repeat(3,1fr);border-left:1px solid var(--ink);border-top:1px solid var(--ink)}
+  .contact-item{padding:32px 28px;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+  .contact-item .name{font-size:12px;letter-spacing:.25em;margin-bottom:6px}
+  .contact-item .value{font-size:12px;color:var(--gray);letter-spacing:.08em}
+
+  /* 页脚 */
+  .footer{padding:28px 0 52px;text-align:center;font-size:10px;letter-spacing:.35em;color:var(--gray)}
+  .wireframe-tag{position:fixed;bottom:14px;right:14px;font-size:10px;letter-spacing:.2em;color:#aaa;background:var(--paper);padding:4px 8px;border:1px solid var(--hairline)}
+
+  @media (max-width:760px){
+    .container{padding:0 24px}
+    .hero{min-height:auto;flex-direction:column;align-items:flex-start;padding-top:40px}
+    .hero-content{padding:20px 0 300px}
+    .hero-content h1{font-size:27px}
+    .dial{right:auto;left:50%;top:auto;bottom:-320px;transform:translateX(-50%);width:560px;height:560px}
+    .work-row{grid-template-columns:1fr auto;gap:16px}
+    .work-row .deg{display:none}
+    .detail-grid{grid-template-columns:1fr;gap:32px}
+    .contact-grid{grid-template-columns:1fr}
+    .nav{display:none}
+  }
+
+  /* ===== 黑白星云光标画布 ===== */
+  #fx-canvas{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    pointer-events:none;
+  }
+
+  /* ===== 悬停微动效 & 3D 卡牌倾斜 ===== */
+  .work-row{
+    transform-style:preserve-3d;
+    will-change:transform;
+    /* 回正时延迟（JS 在 mousemove 时会临时关闭 transition，实现立即跟随） */
+    transition:transform .4s cubic-bezier(.18,.89,.32,1.28), box-shadow .3s ease;
+  }
+  .work-row:hover{
+    box-shadow:0 22px 60px rgba(0,0,0,.16);
+    z-index:2;
+    position:relative;
+  }
+  body.light .work-row:hover{box-shadow:0 22px 60px rgba(0,0,0,.14)}
+  .work-row .info{transform:translateZ(22px)}
+  .work-row .action{transform:translateZ(34px)}
+  .work-row .deg{transform:translateZ(14px)}
+
+  /* ===== 磁性按钮 ===== */
+  .magnetic{
+    display:inline-block;
+    transition:transform .2s ease-out;
+    will-change:transform;
+  }
+
+  /* ===== 悬停微动效（按钮/链接）—— 加大 ===== */
+  .action,.detail-links a,.theme-toggle{
+    transition:transform .25s cubic-bezier(.2,.8,.2,1.2), background .2s ease, color .2s ease;
+    display:inline-block;
+  }
+  .action:hover,.detail-links a:hover{
+    transform:translateY(-3px) scale(1.05);
+  }
+  .theme-toggle:hover{transform:translateY(-2px) scale(1.03)}
+
+  /* ===== 页脚 B ===== */
+  .footer-b{padding:52px 0 64px;border-top:1px solid var(--ink);margin-top:70px}
+  .footer-b .inner{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:24px}
+  .footer-b .left{max-width:32em}
+  .footer-b .left .label{font-size:10px;letter-spacing:.35em;color:var(--gray);text-transform:uppercase;margin-bottom:12px}
+  .footer-b .left .sentence{font-size:13px;line-height:2;color:var(--text);letter-spacing:.05em}
+  .footer-b .right{text-align:right}
+  .footer-b .right .voice{
+    font-size:14px;
+    letter-spacing:.28em;
+    color:var(--ink);
+    font-weight:600;
+    margin-bottom:16px;
+    position:relative;
+    display:inline-block;
+    padding-bottom:10px;
+  }
+  .footer-b .right .voice::after{
+    content:"";
+    position:absolute;
+    left:0;right:0;bottom:0;
+    height:2px;
+    background:var(--ink);
+    opacity:1;
+  }
+  .footer-b .right .contacts{display:flex;gap:26px;font-size:12px;letter-spacing:.2em}
+  .footer-b .right .contacts a{color:var(--ink);text-decoration:none;position:relative;padding-bottom:4px}
+  .footer-b .right .contacts a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:1px;background:var(--ink);transition:width .25s}
+  .footer-b .right .contacts a:hover::after{width:100%}
+  .footer-b .right .sig{font-size:10px;letter-spacing:.35em;color:var(--gray);margin-top:18px}
+  @media (max-width:760px){
+    .footer-b .right{text-align:left}
+  }
+
+  /* 星云光标下隐藏系统光标 */
+  html,body{cursor:none}
+  a,button,.work-row,.theme-toggle{cursor:none}
+  @media (hover:none),(pointer:coarse){
+    html,body,a,button,.work-row,.theme-toggle{cursor:auto}
+  }
+</style>
+</head>
+<body class="light">
+<canvas id="fx-canvas"></canvas>
+<div class="container">
+  <header class="topbar">
+    <div class="logo">久禾<span>JIÙHÉ</span></div>
+    <div class="topbar-right">
+      <nav class="nav"><a href="#">作品</a><a href="#">联系</a><a href="#">关于</a></nav>
+      <div class="theme-toggle" id="themeToggle" role="button" tabindex="0" aria-label="切换深浅色模式">
+        <span class="icon"></span><span class="icon half"></span>
+        <span id="themeLabel">浅色</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-label">原创作品 · ORIGINAL WORKS</div>
+      <h1>仪器指针停于原点<br>每一件作品，都由这里出发</h1>
+      <div class="hero-sub">
+        <strong>仪器指针停于原点</strong>，每一件作品，都由这里出发。
+        <div class="origin-note">本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。</div>
+      </div>
+    </div>
+    <div class="dial" aria-hidden="true">
+      <svg viewBox="0 0 680 680">
+        <circle class="s" cx="340" cy="340" r="330" fill="none" stroke-width="1"/>
+        <circle class="s" cx="340" cy="340" r="318" fill="none" stroke-width=".4"/>
+        <circle class="s" cx="340" cy="340" r="282" fill="none" stroke-width=".5"/>
+        <circle class="s" cx="340" cy="340" r="240" fill="none" stroke-width=".4"/>
+        <circle class="s" cx="340" cy="340" r="188" fill="none" stroke-width=".4"/>
+        <circle class="s" cx="340" cy="340" r="130" fill="none" stroke-width=".4"/>
+        <circle class="s" cx="340" cy="340" r="72" fill="none" stroke-width=".5"/>
+        <g class="s" stroke-width=".5">
+          <line x1="340" y1="10" x2="340" y2="28"/><line x1="340" y1="652" x2="340" y2="670"/>
+          <line x1="10" y1="340" x2="28" y2="340"/><line x1="652" y1="340" x2="670" y2="340"/>
+          <line x1="127" y1="127" x2="139" y2="139"/><line x1="541" y1="127" x2="553" y2="139"/>
+          <line x1="127" y1="553" x2="139" y2="541"/><line x1="541" y1="553" x2="553" y2="541"/>
+          <line x1="45" y1="206" x2="60" y2="216"/><line x1="620" y1="206" x2="635" y2="216"/>
+          <line x1="45" y1="474" x2="60" y2="464"/><line x1="620" y1="474" x2="635" y2="464"/>
+          <line x1="206" y1="45" x2="216" y2="60"/><line x1="474" y1="45" x2="464" y2="60"/>
+          <line x1="206" y1="635" x2="216" y2="620"/><line x1="474" y1="635" x2="464" y2="620"/>
+        </g>
+        <g class="t" font-family="Georgia,'Times New Roman',serif" font-size="15" text-anchor="middle">
+          <text x="340" y="52">XII</text><text x="516" y="90">I</text><text x="596" y="170">II</text><text x="628" y="344">III</text>
+          <text x="596" y="518">IV</text><text x="516" y="598">V</text><text x="340" y="630">VI</text><text x="164" y="598">VII</text>
+          <text x="84" y="518">VIII</text><text x="52" y="344">IX</text><text x="84" y="170">X</text><text x="164" y="90">XI</text>
+        </g>
+        <g class="s" stroke-width=".5">
+          <line x1="340" y1="340" x2="472" y2="230"/><line x1="472" y1="230" x2="430" y2="400"/><line x1="430" y1="400" x2="340" y2="340"/><line x1="340" y1="340" x2="228" y2="430"/>
+        </g>
+        <circle class="f" cx="340" cy="340" r="4"/>
+        <circle class="f" cx="472" cy="230" r="2.5"/>
+        <circle class="f" cx="430" cy="400" r="2.5"/>
+        <circle class="f" cx="228" cy="430" r="2.5"/>
+        <g class="s" stroke-width=".6">
+          <path d="M560 470 l7 0 M563.5 466.5 l0 7"/><path d="M120 250 l7 0 M123.5 246.5 l0 7"/>
+          <path d="M180 580 l6 0 M183 577 l0 6"/><path d="M520 120 l6 0 M523 117 l0 6"/>
+        </g>
+        <line class="s" x1="340" y1="340" x2="340" y2="96" stroke-width="1"/>
+        <circle class="f" cx="340" cy="96" r="5"/>
+        <circle class="fp sf" cx="340" cy="556" r="7" stroke-width=".8"/>
+        <circle class="f" cx="340" cy="556" r="2.5"/>
+        <circle class="fp sf" cx="340" cy="340" r="8" stroke-width=".8"/>
+        <circle class="f" cx="340" cy="340" r="2.5"/>
+        <path id="sealArc" d="M 196 480 A 220 220 0 0 0 480 200" fill="none"/>
+        <text class="t" font-family="'Helvetica Neue',Arial,'PingFang SC',sans-serif" font-size="10" letter-spacing="4" fill-opacity=".6">
+          <textPath href="#sealArc" startOffset="18%">FIRST EDITION · MMXXVI</textPath>
+        </text>
+      </svg>
+    </div>
+  </section>
+
+  <div class="section-head"><span class="no">01</span><h2>作品</h2><span class="line"></span></div>
+  <section class="works-list">
+    <div class="work-row" data-target="w2">
+      <span class="deg">∠ 13°</span>
+      <div class="info"><h3>DeepSeek 降价提醒</h3><p>API 降价第一时间弹窗 — 省钱小工具</p></div>
+      <span class="action">查看详情 →</span>
+    </div>
+    <div class="work-row" data-target="w1">
+      <span class="deg">∠ 47°</span>
+      <div class="info"><h3>虚拟陪伴小手机</h3><p>陪伴 · 提醒 · 日常 — 只属于你的掌上虚拟角色</p></div>
+      <span class="action">查看详情 →</span>
+    </div>
+  </section>
+
+  <div class="section-head"><span class="no">02</span><h2>作品详情</h2><span class="line"></span></div>
+
+  <section class="detail-panel" id="w1">
+    <div class="detail-grid">
+      <div class="detail-art">
+        <svg width="140" height="260" viewBox="0 0 140 260" fill="none" stroke-width="1" aria-label="虚拟陪伴小手机示意">
+          <rect x="10" y="10" width="120" height="240" rx="14"/>
+          <line x1="46" y1="40" x2="94" y2="40"/>
+          <circle cx="70" cy="72" r="18"/>
+          <path d="M70 78 v14"/>
+          <line x1="50" y1="120" x2="90" y2="120"/>
+          <line x1="50" y1="140" x2="90" y2="140"/>
+          <line x1="50" y1="160" x2="78" y2="160"/>
+          <rect x="40" y="190" width="60" height="22" rx="4"/>
+        </svg>
+      </div>
+      <div class="detail-info">
+        <div class="tag">作品 01 · WORK 01</div>
+        <h3>虚拟陪伴小手机</h3>
+        <p class="desc">一部只属于你的虚拟陪伴设备。它记得你的日常，会在合适的时候轻轻提醒你；它不说话的时候，只是陪着你。像一位老朋友，安静地待在你掌心里。</p>
+        <ul class="features">
+          <li>虚拟角色陪伴，只有你和它</li>
+          <li>日常提醒与待办，温柔不打扰</li>
+          <li>陪伴 · 提醒 · 日常 三位一体</li>
+        </ul>
+        <div class="detail-links">
+          <a href="#">下载 ↓</a>
+          <a href="#">GitHub 仓库 →</a>
+        </div>
+        <div class="detail-origin">本作品由 久禾 原创，二改后请告知作者。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="detail-panel" id="w2">
+    <div class="detail-grid">
+      <div class="detail-art">
+        <svg width="220" height="150" viewBox="0 0 220 150" fill="none" stroke-width="1" aria-label="DeepSeek 降价提醒示意">
+          <rect x="10" y="10" width="200" height="130"/>
+          <line x1="10" y1="44" x2="210" y2="44"/>
+          <circle cx="34" cy="27" r="4"/>
+          <line x1="52" y1="27" x2="150" y2="27"/>
+          <text x="34" y="84" font-family="Courier New" font-size="22" text-anchor="middle">↓ 30%</text>
+          <line x1="34" y1="104" x2="186" y2="104"/>
+          <line x1="34" y1="118" x2="140" y2="118"/>
+        </svg>
+      </div>
+      <div class="detail-info">
+        <div class="tag">作品 02 · WORK 02</div>
+        <h3>DeepSeek 降价提醒</h3>
+        <p class="desc">一个安静守在后台的小工具。当 DeepSeek API 价格下调时，它会第一时间弹窗告诉你——不错过每一次省钱机会。</p>
+        <ul class="features">
+          <li>官方价格页面变化实时监控</li>
+          <li>降价第一时间弹窗通知</li>
+          <li>轻量常驻，不打扰日常使用</li>
+        </ul>
+        <div class="detail-links">
+          <a href="#">下载 ↓</a>
+          <a href="#">GitHub 仓库 →</a>
+        </div>
+        <div class="detail-origin">本作品由 久禾 原创，二改后请告知作者。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 页脚方案 B：左文右联 ===== -->
+  <footer class="footer-b">
+    <div class="inner">
+      <div class="left">
+        <div class="label">ORIGIN NOTE</div>
+        <div class="sentence">本作品由 久禾 原创，欢迎在它的基础上继续创作；<br>若作修改，请让作者知晓。</div>
+      </div>
+      <div class="right">
+        <div class="voice">我希望听到你的声音</div>
+        <div class="contacts">
+          <a href="https://space.bilibili.com/476132546" target="_blank" rel="noopener">B站 · 伊斯-Estella</a>
+          <a href="mailto:estellaheroise@foxmail.com">邮箱 · estellaheroise@foxmail.com</a>
+          <a href="#">微信 · Heroise-9632</a>
+        </div>
+        <div class="sig">原创 · 久禾 · MMXXVI</div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<div class="wireframe-tag">10 · 最终版（含页脚B）</div>
+
+<script>
+  // ===== 主题切换 =====
+  var toggle=document.getElementById('themeToggle');
+  var label=document.getElementById('themeLabel');
+
+  function applyTheme(theme){
+    var dark=(theme==='dark');
+    document.body.classList.toggle('light',!dark);
+    label.textContent=dark?'深色':'浅色';
+    try{localStorage.setItem('site-theme',theme);}catch(e){}
+  }
+
+  function initTheme(){
+    var saved=null;
+    try{saved=localStorage.getItem('site-theme');}catch(e){}
+    if(saved==='dark'||saved==='light'){
+      applyTheme(saved);
+    }else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){
+      applyTheme('dark');
+    }else{
+      applyTheme('light');
+    }
+  }
+
+  toggle.addEventListener('click',function(){
+    var dark=!document.body.classList.contains('light');
+    applyTheme(dark?'light':'dark');
+  });
+  toggle.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle.click();}
+  });
+
+  initTheme();
+
+  // ===== 详情展开 =====
+  document.querySelectorAll('.work-row').forEach(function(row){
+    row.addEventListener('click',function(){
+      var id=this.getAttribute('data-target');
+      document.querySelectorAll('.detail-panel').forEach(function(p){p.classList.remove('active')});
+      document.getElementById(id).classList.add('active');
+      document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  });
+
+  /* ============================================================
+   * 黑白星云光标（嵌入自《黑白星云光标_单文件组件.html》）
+   * ========================================================== */
+  (function () {
+    'use strict';
+    const canvas = document.getElementById('fx-canvas');
+    const ctx = canvas.getContext('2d');
+    let W = 0, H = 0, DPR = 1;
+    const mouse = { x: -9999, y: -9999, active: false };
+    const isDark = () => !document.body.classList.contains('light');
+    const fgColor = () => (isDark() ? '#ffffff' : '#000000');
+    const CONFIG = {
+      PARTICLE_DENSITY: 15000,
+      INFLUENCE_RADIUS: 160,
+      ROTATION_STRENGTH: 0.8,
+      ATTRACT_STRENGTH: 0.12,
+      DAMPING: 0.96,
+      TRACK_STRENGTH: 1,
+      RING_STRENGTH: 1,
+      RING_SIZE: 16,
+      PARTICLE_SIZE_MIN: 0.8,
+      PARTICLE_SIZE_MAX: 2.8,
+      GLOW_STRENGTH: 0.5
+    };
+    function resize() {
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W * DPR; canvas.height = H * DPR;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      initParticles();
+    }
+    window.addEventListener('resize', resize);
+    let particles = [];
+    function initParticles() {
+      const count = Math.floor((W * H) / CONFIG.PARTICLE_DENSITY);
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - .5) * .2, vy: (Math.random() - .5) * .2,
+          r: Math.random() * (CONFIG.PARTICLE_SIZE_MAX - CONFIG.PARTICLE_SIZE_MIN) + CONFIG.PARTICLE_SIZE_MIN,
+          baseAlpha: Math.random() * .5 + .25,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+    function updateParticles() {
+      for (const p of particles) {
+        const dx = mouse.x - p.x, dy = mouse.y - p.y;
+        const dist = Math.hypot(dx, dy) || .01;
+        const R = CONFIG.INFLUENCE_RADIUS;
+        if (dist < R && mouse.active) {
+          const t = 1 - dist / R;
+          const force = t * t * CONFIG.ATTRACT_STRENGTH;
+          p.vx += (dx / dist) * force;
+          p.vy += (dy / dist) * force;
+          p.vx += (-dy / dist) * force * CONFIG.ROTATION_STRENGTH;
+          p.vy += (dx / dist) * force * CONFIG.ROTATION_STRENGTH;
+        }
+        p.vx *= CONFIG.DAMPING; p.vy *= CONFIG.DAMPING;
+        p.phase += .008;
+        p.x += p.vx + Math.sin(p.phase) * .1;
+        p.y += p.vy + Math.cos(p.phase * .7) * .1;
+        if (p.x < -30) p.x = W + 30;
+        if (p.x > W + 30) p.x = -30;
+        if (p.y < -30) p.y = H + 30;
+        if (p.y > H + 30) p.y = -30;
+      }
+    }
+    function drawParticles() {
+      const color = fgColor();
+      ctx.globalCompositeOperation = 'source-over';
+      for (const p of particles) {
+        ctx.globalAlpha = p.baseAlpha * .7;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        if (mouse.active) {
+          const dist = Math.hypot(mouse.x - p.x, mouse.y - p.y);
+          if (dist < 100) {
+            const glow = (1 - dist / 100) * CONFIG.GLOW_STRENGTH;
+            ctx.globalAlpha = glow;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    const cursor = { x: -9999, y: -9999, ringX: -9999, ringY: -9999, ringScale: 1 };
+    function updateCursor() {
+      cursor.x += (mouse.x - cursor.x) * CONFIG.TRACK_STRENGTH;
+      cursor.y += (mouse.y - cursor.y) * CONFIG.TRACK_STRENGTH;
+      cursor.ringX += (mouse.x - cursor.ringX) * CONFIG.RING_STRENGTH;
+      cursor.ringY += (mouse.y - cursor.ringY) * CONFIG.RING_STRENGTH;
+    }
+    function drawCursor() {
+      const color = fgColor();
+      ctx.globalAlpha = .9; ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(cursor.x, cursor.y, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = .6; ctx.strokeStyle = color; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(cursor.ringX, cursor.ringY, CONFIG.RING_SIZE * cursor.ringScale, 0, Math.PI * 2); ctx.stroke();
+      const angle = Date.now() * .003;
+      ctx.globalAlpha = .9; ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cursor.ringX + Math.cos(angle) * CONFIG.RING_SIZE * cursor.ringScale,
+              cursor.ringY + Math.sin(angle) * CONFIG.RING_SIZE * cursor.ringScale, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      updateParticles(); drawParticles();
+      updateCursor(); drawCursor();
+      requestAnimationFrame(frame);
+    }
+    window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true; });
+    window.addEventListener('mouseout', () => { mouse.active = false; });
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; mouse.active = true; }
+    }, { passive: true });
+    window.addEventListener('touchend', () => { mouse.active = false; });
+    resize();
+    requestAnimationFrame(frame);
+  })();
+
+  /* ============================================================
+   * 3D 卡牌倾斜 + 磁性按钮
+   * ========================================================== */
+  (function(){
+    // 3D 卡牌倾斜：作品行跟随鼠标产生立体倾斜
+    // —— 移动时立即跟随（临时关闭 transition），离开后延迟回正（恢复 transition）
+    var rows = document.querySelectorAll('.work-row');
+    rows.forEach(function(row){
+      row.addEventListener('mousemove', function(e){
+        var r = this.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width - .5;
+        var py = (e.clientY - r.top) / r.height - .5;
+        // 关闭 transition，立即跟随鼠标
+        this.style.transition = 'none';
+        this.style.transform = 'perspective(650px) rotateX(' + (-py*7) + 'deg) rotateY(' + (px*7) + 'deg) translateY(-3px)';
+      });
+      row.addEventListener('mouseleave', function(){
+        // 恢复 transition，让卡片延迟、柔和地回正
+        this.style.transition = '';
+        this.style.transform = 'perspective(650px) rotateX(0deg) rotateY(0deg) translateY(0)';
+      });
+    });
+
+    // 磁性按钮：只作用于详情区的下载/GitHub 按钮
+    // （作品卡片里的「查看详情 →」是整行点击入口，不做磁吸，避免与点击冲突）
+    var magnets = document.querySelectorAll('.detail-links a');
+    magnets.forEach(function(m){
+      m.addEventListener('mousemove', function(e){
+        var r = this.getBoundingClientRect();
+        var mx = e.clientX - r.left - r.width/2;
+        var my = e.clientY - r.top - r.height/2;
+        this.style.transform = 'translate(' + (mx*.35) + 'px,' + (my*.35) + 'px)';
+      });
+      m.addEventListener('mouseleave', function(){
+        this.style.transform = 'translate(0,0)';
+      });
+    });
+  })();
+</script>
+</body>
+</html>
