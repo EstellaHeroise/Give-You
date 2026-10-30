@@ -21,7 +21,8 @@ Monitor DeepSeek official API pricing and alert you when prices drop.
   python deepseek_price_alert.py --check-update  # 手动检查是否有新版本
   python deepseek_price_alert.py          # 默认: 同 --once
 
-MIT License. 数据来源 / Data source: DeepSeek 官方定价页与官方公告 (官方文档).
+原创使用许可 (Original Works License). 数据来源 / Data source: DeepSeek 官方定价页与官方公告 (官方文档).
+本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。
 """
 
 import json
@@ -35,7 +36,7 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 # 常量配置 / Constants
 # --------------------------------------------------------------------------
-__version__ = "0.6.0"  # 当前版本，用于自动更新检测 / Current version
+__version__ = "0.7.0"  # 当前版本，用于自动更新检测 / Current version
 
 # GitHub 仓库地址（开源后替换 <YOUR_GITHUB_USERNAME> 为真实用户名）
 # GitHub repo (replace <YOUR_GITHUB_USERNAME> after open-sourcing)
@@ -708,6 +709,16 @@ def show_status() -> int:
 
 def main() -> int:
     args = sys.argv[1:]
+
+    # 显示版本 / Show version
+    if "--version" in args or "-v" in args:
+        print(f"deepseek-price-alert v{__version__}")
+        return 0
+
+    # 显示帮助 / Show help
+    if "--help" in args or "-h" in args:
+        print(__doc__)
+        return 0
 
     # 开机自启 / Startup
     if "--setup-startup" in args:

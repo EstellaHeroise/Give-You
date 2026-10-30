@@ -8,14 +8,15 @@ build_release.py — 打包二合一安装包
   - installer.py         # 安装向导后端
   - installer.html       # 图形选择页面（两个版本卡片）
   - desktop/             # 桌面通用版文件
-  - workbuddy/           # WorkBuddy 适配版文件（SKILL.md + 脚本）
+  - skill/               # WorkBuddy 适配版文件（SKILL.md + 脚本）
   - README.md / LICENSE
 
 用法 / Usage:
   python build_release.py                # 输出到 dist/
   python build_release.py --version 0.5.0
 
-MIT License.
+原创使用许可 (Original Works License).
+本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。
 """
 
 import argparse
@@ -78,7 +79,7 @@ def build(version: str) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="打包 DeepSeek 降价提醒 二合一安装包")
-    parser.add_argument("--version", default="0.6.0", help="版本号 (默认 0.6.0)")
+    parser.add_argument("--version", default="0.7.0", help="版本号 (默认 0.7.0)")
     args = parser.parse_args()
     build(args.version)
     return 0

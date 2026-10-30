@@ -199,7 +199,7 @@ deepseek-price-alert/
 ├── price_history.json        # 价格历史快照（自动生成）/ Price history (auto-generated)
 ├── monitor.log               # 运行日志 / Log file
 ├── README.md                 # 本文档 / This doc
-└── LICENSE                   # MIT 协议
+└── LICENSE                   # 原创使用许可 / Original Works License
 ```
 
 ---
@@ -216,12 +216,28 @@ deepseek-price-alert/
 ## 🤝 贡献 / Contributing
 
 欢迎提 Issue、PR，或者 star ⭐ 支持！如果你想加新功能（比如 Server酱/微信/邮件通知、活动公告监控），直接开 PR 就好。
+如果你在它的基础上做了修改、二次开发，请记得**告知作者**（见下方联系方式），让作者知道你的创意。
 
 ---
 
 ## 📄 许可证 / License
 
-MIT License. See [LICENSE](LICENSE).
+**本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。**
+
+本项目采用**原创使用许可**（Original Works License），非 MIT 协议。核心条款：
+
+- ✅ 免费使用
+- ✅ 允许修改与二次开发
+- 📣 **修改并分发时，请提前告知作者**
+- ℹ️ 修改版本请保留本许可声明与出处
+
+完整条款见 [LICENSE](LICENSE)。
+
+### 联系作者 / Contact
+
+- B站：伊斯-Estella → https://space.bilibili.com/476132546
+- 邮箱：estellaheroise@foxmail.com
+- 微信：Heroise-9632
 
 ---
 

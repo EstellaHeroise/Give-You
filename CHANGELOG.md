@@ -134,6 +134,28 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.7.0] - 2026-10-30
+
+### 变更 / Changed
+
+- 📜 **许可证变更**：由 MIT 协议改为**原创使用许可**（Original Works License）
+  - License changed from MIT to the **Original Works License**.
+- 核心条款：
+  - ✅ 免费使用
+  - ✅ 允许修改与二次开发
+  - 📣 **修改并分发时，请提前告知作者**
+  - ℹ️ 修改版本请保留本许可声明与出处
+- 📇 **作者联系方式**：B站 伊斯-Estella / 邮箱 estellaheroise@foxmail.com / 微信 Heroise-9632
+  - Author contact info added to LICENSE and README.
+- 原创声明沿用作品集定稿措辞：「本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。」
+
+### 说明 / Notes
+
+- 此许可是**源码可见、免费使用、二改需告知作者**的专属许可，非 MIT 宽松许可，也非"完全不开源"。
+- LICENSE / README / desktop / skill 各副本已同步更新。
+
+---
+
 ## 🔮 后续计划 / Planned
 
 - [ ] 推送 GitHub 开源（替换 README / LICENSE 中的 `<YOUR_GITHUB_USERNAME>`）

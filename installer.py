@@ -17,7 +17,8 @@ installer.py — DeepSeek 降价提醒工具 二合一安装向导
   python installer.py --port 9000
   python installer.py --test     # 自检模式：不打开浏览器，仅启动服务供测试
 
-MIT License.
+原创使用许可 (Original Works License).
+本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。
 """
 
 import argparse
@@ -36,7 +37,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 
 # GitHub 仓库地址（开源后替换为真实用户名）
 GITHUB_REPO = "<YOUR_GITHUB_USERNAME>/deepseek-price-alert"

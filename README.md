@@ -53,7 +53,7 @@ The installer bundles both editions — download once, choose your edition durin
 - 📜 **价格历史自动记录**（`price_history.json`），涨价也会记录（仅日志，不弹窗）
 - 🐍 **纯 Python 标准库，零依赖** —— clone 下来就能跑，不用 `pip install` 任何东西
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
-- 💻 **命令行友好**：`--init`、`--once`、`--history`、`--check-update`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--remove-schedule`、`--status`
+- 💻 **命令行友好**：`--init`、`--once`、`--history`、`--version`、`--help`、`--check-update`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--remove-schedule`、`--status`
 - 🔄 **自动更新检测**：脚本与安装向导启动时自动检查 GitHub 最新版本，发现新版提示下载（配合 GitHub Releases 使用）
 
 ---
@@ -259,7 +259,7 @@ deepseek-price-alert/
 ├── dist/                     # 生成的安装包 / Built release zips
 ├── CHANGELOG.md              # 更新日志 / Changelog
 ├── README.md                 # 本文档 / This doc
-└── LICENSE                   # MIT 协议
+└── LICENSE                   # 原创使用许可 / Original Works License
 ```
 
 ---
@@ -276,12 +276,28 @@ deepseek-price-alert/
 ## 🤝 贡献 / Contributing
 
 欢迎提 Issue、PR，或者 star ⭐ 支持！如果你想加新功能（比如 Server酱/微信/邮件通知、活动公告监控），直接开 PR 就好。
+如果你在它的基础上做了修改、二次开发，请记得**告知作者**（见下方联系方式），让作者知道你的创意。
 
 ---
 
 ## 📄 许可证 / License
 
-MIT License. See [LICENSE](LICENSE).
+**本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。**
+
+本项目采用**原创使用许可**（Original Works License），非 MIT 协议。核心条款：
+
+- ✅ 免费使用
+- ✅ 允许修改与二次开发
+- 📣 **修改并分发时，请提前告知作者**
+- ℹ️ 修改版本请保留本许可声明与出处
+
+完整条款见 [LICENSE](LICENSE)。
+
+### 联系作者 / Contact
+
+- B站：伊斯-Estella → https://space.bilibili.com/476132546
+- 邮箱：estellaheroise@foxmail.com
+- 微信：Heroise-9632
 
 ---
 
