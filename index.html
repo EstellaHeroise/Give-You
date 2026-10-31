@@ -129,7 +129,6 @@
 
   /* 页脚 */
   .footer{padding:28px 0 52px;text-align:center;font-size:10px;letter-spacing:.35em;color:var(--gray)}
-  .wireframe-tag{position:fixed;bottom:14px;right:14px;font-size:10px;letter-spacing:.2em;color:#aaa;background:var(--paper);padding:4px 8px;border:1px solid var(--hairline)}
 
   @media (max-width:760px){
     .container{padding:0 24px}
@@ -224,13 +223,14 @@
     background:var(--ink);
     opacity:1;
   }
-  .footer-b .right .contacts{display:flex;gap:26px;font-size:12px;letter-spacing:.2em}
+  .footer-b .right .contacts{display:flex;justify-content:flex-end;gap:26px;font-size:12px;letter-spacing:.2em}
   .footer-b .right .contacts a{color:var(--ink);text-decoration:none;position:relative;padding-bottom:4px}
   .footer-b .right .contacts a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:1px;background:var(--ink);transition:width .25s}
   .footer-b .right .contacts a:hover::after{width:100%}
   .footer-b .right .sig{font-size:10px;letter-spacing:.35em;color:var(--gray);margin-top:18px}
   @media (max-width:760px){
     .footer-b .right{text-align:left}
+    .footer-b .right .contacts{justify-content:flex-start}
   }
 
   /* 星云光标下隐藏系统光标 */
@@ -411,8 +411,6 @@
     </div>
   </footer>
 </div>
-
-<div class="wireframe-tag">10 · 最终版（含页脚B）</div>
 
 <script>
   // ===== 主题切换 =====
