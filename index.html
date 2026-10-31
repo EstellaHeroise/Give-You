@@ -152,6 +152,19 @@
     pointer-events:none;
   }
 
+  /* ===== 主题切换：水波纹（圆形揭示）扩散层 ===== */
+  /* 点击按钮时，一层新主题底色从按钮中心以圆形扩散铺满全屏，
+     一次性完成黑白转换，参考大厂深色模式切换的 circular reveal 效果 */
+  .theme-ripple{
+    position:fixed;
+    inset:0;
+    z-index:9998;            /* 在内容之上、自定义光标画布之下 */
+    pointer-events:none;
+    display:none;            /* 默认隐藏，切换时由 JS 激活 */
+    will-change:clip-path;
+    /* 背景色由 JS 设为新主题的 --paper 色，clip-path 由 JS 动画控制 */
+  }
+
   /* ===== 悬停微动效 & 3D 卡牌倾斜 ===== */
   .work-row{
     transform-style:preserve-3d;
@@ -425,9 +438,60 @@
     }
   }
 
+  // 水波纹扩散层（新主题底色，从按钮中心圆形揭示铺满全屏）
+  var ripple=document.createElement('div');
+  ripple.className='theme-ripple';
+  document.body.appendChild(ripple);
+
+  // 新主题对应的页面底色（与 CSS 变量 --paper 保持一致）
+  var PAPER={ light:'#ffffff', dark:'#0e0e0e' };
+
+  function doRipple(theme){
+    var rect=toggle.getBoundingClientRect();
+    var cx=rect.left+rect.width/2;
+    var cy=rect.top+rect.height/2;
+    // 计算能覆盖整个视口的最大半径
+    var maxR=Math.hypot(
+      Math.max(cx, window.innerWidth-cx),
+      Math.max(cy, window.innerHeight-cy)
+    );
+    var paper=PAPER[theme]||'#ffffff';
+
+    ripple.style.background=paper;
+    ripple.style.display='block';
+    ripple.style.clipPath='circle(0px at '+cx+'px '+cy+'px)';
+    // 强制 reflow，确保起始状态生效
+    void ripple.offsetWidth;
+    // 圆形从按钮中心扩散铺满全屏（约 0.6s，带轻微缓动）
+    ripple.style.transition='clip-path .6s cubic-bezier(.7,0,.3,1)';
+    ripple.style.clipPath='circle('+(maxR+2)+'px at '+cx+'px '+cy+'px)';
+
+    var done=false;
+    function finish(){
+      if(done) return; done=true;
+      // 在覆盖层底下瞬间切好真实主题，避免露馅
+      document.body.style.transition='none';
+      applyTheme(theme);
+      void document.body.offsetWidth;
+      document.body.style.transition='';
+      ripple.style.display='none';
+      ripple.style.clipPath='';
+      ripple.style.transition='';
+    }
+    ripple.addEventListener('transitionend', finish, {once:true});
+    // 兜底：动画事件未触发时也能收尾
+    setTimeout(finish, 750);
+  }
+
   toggle.addEventListener('click',function(){
     var dark=!document.body.classList.contains('light');
-    applyTheme(dark?'light':'dark');
+    var next=dark?'light':'dark';
+    // 尊重「减少动态效果」无障碍偏好：直接切换，不做水波纹
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      applyTheme(next);
+      return;
+    }
+    doRipple(next);
   });
   toggle.addEventListener('keydown',function(e){
     if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle.click();}
