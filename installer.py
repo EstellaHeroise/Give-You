@@ -40,14 +40,14 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 GITHUB_REPO = "EstellaHeroise/Give-You"
 GITHUB_RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 # 安装目标根目录（默认在用户主目录下，两版本子目录分离，互不冲突）
-DEFAULT_TARGET_ROOT = Path.home() / "deepseek-price-alert"
+DEFAULT_TARGET_ROOT = Path("D:\\deepseek-price-alert")
 
 # 两个版本的目标子目录
 DESKTOP_SUBDIR = "desktop"
@@ -56,6 +56,7 @@ WORKBUDDY_SUBDIR = "workbuddy"
 # 源文件目录（安装包内的目录）
 SOURCE_DESKTOP = INSTALLER_DIR / "desktop"
 SOURCE_WORKBUDDY = INSTALLER_DIR / "workbuddy"
+SOURCE_PYTHON = INSTALLER_DIR / "python"  # 内置便携 Python（无需用户自行安装）
 
 # WorkBuddy skills 目录（用户级）
 WORKBUDDY_SKILLS_DIR = Path.home() / ".workbuddy" / "skills" / "deepseek-price-alert"
@@ -141,6 +142,33 @@ def ensure_python() -> str:
     return sys.executable
 
 
+def deploy_runtime(target_dir: Path) -> None:
+    """
+    把内置便携 Python 与启动器(run.bat)一起部署到安装目录。
+
+    这样用户无需自行安装 Python：双击 run.bat 即可运行工具；
+    且开机自启 / 定时任务基于 sys.executable，会自动指向内置 Python。
+    """
+    if not SOURCE_PYTHON.exists():
+        log(f"[warn] 未找到内置 Python（{SOURCE_PYTHON}），跳过运行时部署。")
+        return
+    dest_py = target_dir / "python"
+    copy_tree(SOURCE_PYTHON, dest_py)
+    run_bat = target_dir / "run.bat"
+    run_bat.write_text(
+        "@echo off\n"
+        "cd /d \"%~dp0\"\n"
+        "if not exist \"python\\python.exe\" (\n"
+        "  echo [错误] 未找到内置 Python（python\\python.exe），请重新安装本工具。\n"
+        "  pause\n"
+        "  exit /b 1\n"
+        ")\n"
+        "\"python\\python.exe\" deepseek_price_alert.py %*\n",
+        encoding="utf-8",
+    )
+    log(f"已部署内置运行时 / Deployed bundled runtime: {dest_py}")
+
+
 def cleanup_installer(remove_zip: bool = True) -> dict:
     """
     安装完成后自动清理安装包：
@@ -212,6 +240,7 @@ def install_desktop(target_root: Path, enable_startup: bool) -> dict:
     target_dir.mkdir(parents=True, exist_ok=True)
 
     copy_tree(SOURCE_DESKTOP, target_dir)
+    deploy_runtime(target_dir)
 
     results = {
         "version": "桌面通用版 / Desktop Edition",
@@ -280,6 +309,7 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
         target_dir = target_root / DESKTOP_SUBDIR
         target_dir.mkdir(parents=True, exist_ok=True)
         copy_tree(SOURCE_DESKTOP, target_dir)
+        deploy_runtime(target_dir)
         results["desktop_dir"] = str(target_dir)
         for item in sorted(target_dir.rglob("*")):
             if item.is_file():

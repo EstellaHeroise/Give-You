@@ -1,74 +1,52 @@
 @echo off
 rem ============================================================
-rem  DeepSeek Price Alert - Setup Launcher
-rem  Double-click this file to start the graphical installer.
+rem  DeepSeek 降价提醒 - 安装向导启动器
+rem  双击本文件即可开始安装（内置便携 Python，无需自行安装）
 rem ============================================================
 setlocal
 cd /d "%~dp0"
 
-rem ---- Clear proxy environment variables to avoid localhost issues ----
-set "HTTP_PROXY="
-set "HTTPS_PROXY="
-set "http_proxy="
-set "https_proxy="
-set "ALL_PROXY="
-set "all_proxy="
-
-rem Locate the setup ZIP for auto-cleanup after install
+rem 定位安装包 ZIP（供安装完成后自动清理，可选）
 set "DEEPSEEK_ALERT_SETUP_ZIP="
 for %%f in ("%~dp0..\deepseek-price-alert-setup-*.zip") do (
   if not defined DEEPSEEK_ALERT_SETUP_ZIP set "DEEPSEEK_ALERT_SETUP_ZIP=%%~f"
 )
 
-rem Find Python
-set "PY="
-where python >nul 2>nul && set "PY=python"
-if not defined PY (
-  where py >nul 2>nul && set "PY=py"
-)
-if not defined PY (
-  echo [ERROR] Python not found. Please install Python 3.8+ and add it to PATH.
+rem 检查内置便携 Python 是否存在
+if not exist "python\python.exe" (
+  echo [错误] 未找到内置 Python（python\python.exe）。
+  echo        请确认下载的是完整安装包，且未改动文件夹结构。
   pause
   exit /b 1
 )
 
 echo.
 echo ============================================
-echo  DeepSeek Price Alert - Installer
+echo  DeepSeek 降价提醒 - 安装向导
 echo ============================================
-echo  Starting local web server...
-echo  Opening your browser...
+echo  正在启动本地安装服务，请稍候...
+echo.
 
-rem Clear proxy again for the child process
-set "HTTP_PROXY="
-set "HTTPS_PROXY="
-set "http_proxy="
-set "https_proxy="
-set "ALL_PROXY="
-set "all_proxy="
+rem 用内置 Python 启动安装服务（保留可见窗口，便于排查）
+start "" "python\python.exe" installer.py --no-browser
 
-rem Start the server in the SAME directory as this bat file, in background
-start "" /d "%~dp0" /b %PY% installer.py --no-browser %*
-
-rem Wait until the server is ready (up to ~15 seconds)
+rem 等待本地服务就绪（--noproxy 避免本机访问被代理干扰）
 set "READY="
-for /l %%i in (1,1,15) do (
-  >nul 2>&1 curl -s --max-time 1 http://127.0.0.1:8765/health && set "READY=1" && goto :ready
+for /l %%i in (1,1,20) do (
+  >nul 2>&1 curl -s --noproxy "*" --max-time 1 http://127.0.0.1:8765/health && set "READY=1" && goto :ready
   ping -n 1 127.0.0.1 >nul
 )
 :ready
 if not defined READY (
-  echo  [WARN] Server not responding yet, opening browser anyway...
+  echo  [提示] 安装服务暂未响应，仍尝试打开浏览器...
 )
 ping -n 1 127.0.0.1 >nul
 
-rem Open the browser
+rem 打开浏览器中的图形安装向导
 start "" http://127.0.0.1:8765/
 
-echo  If the browser did not open, visit:
-echo  http://127.0.0.1:8765/
-echo.
-echo  The installer is running. Close this window when done.
+echo  若浏览器未自动打开，请手动访问： http://127.0.0.1:8765/
+echo  安装向导正在运行，完成后可关闭本窗口。
 echo ============================================
 echo.
 

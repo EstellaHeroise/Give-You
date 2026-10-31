@@ -82,7 +82,7 @@ python style_picker.html  # 浏览器打开, 点击选择, 点保存下载 confi
 
 ### 环境要求 / Requirements
 
-- Python 3.8+（无需安装任何第三方包 / No third-party packages needed）
+- **无需安装 Python**：本工具已随安装包自带内置 Python，请用安装目录里的 `run.bat` 启动（双击即可），不要用系统自带的 `python` 命令
 - 能访问 `api-docs.deepseek.com` 的网络
 
 ### 1. 下载 / Download
@@ -101,7 +101,7 @@ git checkout tool-deepseek
 ### 2. 首次运行：建立价格基线 / First run: create baseline
 
 ```bash
-python deepseek_price_alert.py --init
+run.bat --init
 ```
 
 这会抓取当前官方价格并保存为基线，作为以后对比的起点。
@@ -110,7 +110,7 @@ This fetches the current official prices and saves them as the baseline.
 ### 3. 手动检查一次 / Run a one-time check
 
 ```bash
-python deepseek_price_alert.py --once
+run.bat --once
 ```
 
 如果发现价格比基线**低**，会弹出系统通知并写入日志。
@@ -119,7 +119,7 @@ If any price is lower than the baseline, you'll get a desktop notification + log
 ### 4. 查看历史 / View price history
 
 ```bash
-python deepseek_price_alert.py --history
+run.bat --history
 ```
 
 ---
@@ -134,10 +134,10 @@ python deepseek_price_alert.py --history
 
 ```bash
 # 启用开机提醒
-python deepseek_price_alert.py --setup-startup
+run.bat --setup-startup
 
 # 取消开机提醒
-python deepseek_price_alert.py --remove-startup
+run.bat --remove-startup
 ```
 
 实现原理：在 Windows「启动」文件夹创建静默运行脚本，开机后自动执行 `--once`。
@@ -148,10 +148,10 @@ python deepseek_price_alert.py --remove-startup
 
 ```bash
 # 启用每日定时提醒（例如每天 09:30）
-python deepseek_price_alert.py --setup-schedule 09:30
+run.bat --setup-schedule 09:30
 
 # 取消每日定时提醒
-python deepseek_price_alert.py --remove-schedule
+run.bat --remove-schedule
 ```
 
 实现原理：通过 Windows 任务计划程序创建每天运行一次的定时任务。
@@ -168,7 +168,7 @@ python deepseek_price_alert.py --remove-schedule
 ### 📋 查看提醒状态
 
 ```bash
-python deepseek_price_alert.py --status
+run.bat --status
 ```
 
 显示开机提醒、每日定时提醒是否已启用，以及当前提醒方式。

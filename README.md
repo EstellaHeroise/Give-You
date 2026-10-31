@@ -17,8 +17,8 @@ The installer bundles both editions — download once, choose your edition durin
 
 | 版本 Edition | 适用场景 | 安装位置 |
 |---|---|---|
-| 🖥️ **桌面通用版** / Desktop | 独立运行的桌面程序，不依赖任何 AI 平台 | `~/deepseek-price-alert/desktop`（可自定义） |
-| 🤖 **WorkBuddy 适配版** / WorkBuddy | 已安装 WorkBuddy 的用户，对话中直接触发检查 | `~/.workbuddy/skills/deepseek-price-alert` |
+| 🖥️ **桌面通用版** / Desktop | 独立运行的桌面程序，不依赖任何 AI 平台 | `D:\deepseek-price-alert\desktop`（安装时可自定义） |
+| 🤖 **WorkBuddy 适配版** / WorkBuddy | 已安装 WorkBuddy 的用户，对话中直接触发检查 | `~/.workbuddy/skills/deepseek-price-alert`（WorkBuddy 自动识别） |
 
 ### 使用方法 / How to install
 
@@ -32,6 +32,8 @@ The installer bundles both editions — download once, choose your edition durin
 > 安装向导为本地网页（`http://127.0.0.1:8765`），不上传任何数据。
 > 若想保留安装包，在安装界面取消勾选「安装完成后自动删除下载的安装包」即可。
 
+**安装完成后如何运行桌面版**：前往 `D:\deepseek-price-alert\desktop`，双击 `run.bat` 即可（同样无需安装 Python，它用的是安装时自带的内置 Python）。首次运行请先执行一次 `run.bat --init` 建立价格基线。
+
 ### WorkBuddy 适配版使用方式
 
 安装后，在 WorkBuddy 对话中输入以下指令即可触发：
@@ -39,6 +41,22 @@ The installer bundles both editions — download once, choose your edition durin
 - 「DeepSeek 降价了吗？」→ 自动运行 `--once` 检查
 - 「查看 DeepSeek 价格历史」→ 自动运行 `--history`
 - 「设置 DeepSeek 开机提醒」→ 自动运行 `--setup-startup`
+
+---
+
+## 🆕 更新日志 / Changelog
+
+### v0.9.0（2026-11-01）
+- 🐍 **内置便携 Python**：安装包自带 Windows 便携 Python（瘦身后约 31MB），下载解压双击即可用，**无需用户自行安装 Python**
+- 🧹 **启动器洗白**：重写 `install.bat`，去掉"静默后台启动""一股脑清空代理变量"等易被杀软误报的特征；健康检查改用 `curl --noproxy`，避免本机代理干扰
+- 🚀 **自动生成 run.bat**：安装完成后可直接双击 `run.bat` 启动（内部用内置 Python）；开机自启 / 定时任务也会自动指向内置 Python
+- 📁 **默认安装路径调整**：桌面版默认装到 `D:\deepseek-price-alert`（安装界面可自定义）；WorkBuddy 版默认装到 `~/.workbuddy/skills/deepseek-price-alert`（WorkBuddy 自动识别）
+- 🛡️ **文档新增「被杀软拦截怎么办」**：说明浏览器 / Defender / SmartScreen 误报的处理方法
+- 📦 安装包新增 `python/`（内置运行时），整包约 9.8MB
+
+### v0.8.0
+- 二合一安装包（桌面版 + WorkBuddy 版），图形化本地网页安装向导
+- 自动更新检测、开机提醒、每日定时提醒
 
 ---
 
@@ -117,7 +135,7 @@ python style_picker.html  # 浏览器打开, 点击选择, 点保存下载 confi
 
 ### 环境要求 / Requirements
 
-- Python 3.8+（无需安装任何第三方包 / No third-party packages needed）
+- **无需安装 Python**：安装包已内置便携 Python，双击 `install.bat` 即可，安装后工具自带运行环境
 - 能访问 `api-docs.deepseek.com` 的网络
 
 ### 1. 下载 / Download
@@ -265,6 +283,21 @@ deepseek-price-alert/
 ├── README.md                 # 本文档 / This doc
 └── LICENSE                   # 原创使用许可 / Original Works License
 ```
+
+---
+
+## 🛡️ 关于杀毒软件 / 如果被拦截怎么办
+
+本工具**不含任何恶意代码**，但安装包里的 `install.bat`（批处理脚本）和内置的 Python 运行环境，有时会被 Windows Defender / 浏览器「误报」或「拦截」。这是免费、未签名小工具的常见现象，并非真的有毒。
+
+如果下载或运行时遇到拦截，按下面处理：
+
+- **浏览器提示「此文件可能有害」**：这是下载标记（Mark of the Web）的常规警告，点「保留」/「仍要下载」即可。
+- **Windows Defender 删除 / 拦截 `install.bat` 或 `python`**：打开 Windows 安全中心 → 病毒和威胁防护 → 保护历史记录 → 找到本工具相关项 → 「允许」/「还原」。
+- **SmartScreen 提示「Windows 已保护你的电脑」**（多见于 .exe，本安装包是脚本，较少出现）：点「详细信息」→「仍要运行」。
+- **实在不放心**：本工具全部是可读的 Python 源码（`installer.py` / `deepseek_price_alert.py`），可自行用任意杀软或 virustotal.com 扫描，也可在 GitHub 查看完整源码。
+
+> 为什么会被误报？杀软靠「行为像不像坏软件」来判断。安装器会启动本地网页服务、往用户目录写文件——这些行为「长相」和某些病毒相似，所以可能被拦。我们已经把脚本写得尽量透明（不隐藏窗口、不乱改系统设置）。
 
 ---
 

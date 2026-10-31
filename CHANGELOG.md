@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.9.0] - 2026-11-01
+
+### 新增 / Added
+- 内置便携 Python：安装包自带 Windows 便携 Python（瘦身后约 31MB），下载解压双击即可用，无需用户自行安装 Python
+- 自动生成 run.bat：安装完成后直接双击 run.bat 即可运行（内部使用内置 Python）；开机自启 / 定时任务自动指向内置 Python
+- 安装界面支持自定义安装路径（auto-dir 输入框）
+
+### 变更 / Changed
+- 启动器洗白：重写 install.bat，去掉静默后台启动、一股脑清空代理变量等易被杀软误报的特征；健康检查改用 curl --noproxy
+- 默认安装路径：桌面版默认 D:\deepseek-price-alert；WorkBuddy 版默认 ~/.workbuddy/skills/deepseek-price-alert（WorkBuddy 自动识别）
+
+### 文档 / Docs
+- README 新增「被杀软拦截怎么办」说明；版本号升级至 0.9.0
+
 ## [v0.4] - 2026-10-30
 
 ### 新增 / Added
