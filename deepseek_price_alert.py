@@ -83,8 +83,10 @@ PROMO_KEYWORDS = (
 # --------------------------------------------------------------------------
 def http_get(url: str) -> str:
     """抓取网页内容 / Fetch a URL and return decoded HTML."""
+    # 显式禁用代理：避免环境变量 HTTP_PROXY/HTTPS_PROXY 干扰请求
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+    with opener.open(req, timeout=REQUEST_TIMEOUT) as resp:
         return resp.read().decode("utf-8", errors="replace")
 
 

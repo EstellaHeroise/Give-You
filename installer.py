@@ -93,11 +93,13 @@ def check_for_update() -> None:
 
     try:
         import urllib.request
+        # 显式禁用代理：避免环境变量 HTTP_PROXY/HTTPS_PROXY 干扰本地服务
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         req = urllib.request.Request(
             GITHUB_RELEASES_API,
             headers={"User-Agent": "Mozilla/5.0 deepseek-price-alert-installer"},
         )
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with opener.open(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         latest = str(data.get("tag_name", "")).lstrip("vV")
         if not latest:

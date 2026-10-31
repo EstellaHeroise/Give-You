@@ -6,6 +6,14 @@ rem ============================================================
 setlocal
 cd /d "%~dp0"
 
+rem ---- Clear proxy environment variables to avoid localhost issues ----
+set "HTTP_PROXY="
+set "HTTPS_PROXY="
+set "http_proxy="
+set "https_proxy="
+set "ALL_PROXY="
+set "all_proxy="
+
 rem Locate the setup ZIP for auto-cleanup after install
 set "DEEPSEEK_ALERT_SETUP_ZIP="
 for %%f in ("%~dp0..\deepseek-price-alert-setup-*.zip") do (
@@ -31,11 +39,28 @@ echo ============================================
 echo  Starting local web server...
 echo  Opening your browser...
 
+rem Clear proxy again for the child process
+set "HTTP_PROXY="
+set "HTTPS_PROXY="
+set "http_proxy="
+set "https_proxy="
+set "ALL_PROXY="
+set "all_proxy="
+
 rem Start the server in the SAME directory as this bat file, in background
 start "" /d "%~dp0" /b %PY% installer.py --no-browser %*
 
-rem Give the server a moment to start
-ping -n 3 127.0.0.1 >nul
+rem Wait until the server is ready (up to ~15 seconds)
+set "READY="
+for /l %%i in (1,1,15) do (
+  >nul 2>&1 curl -s --max-time 1 http://127.0.0.1:8765/health && set "READY=1" && goto :ready
+  ping -n 1 127.0.0.1 >nul
+)
+:ready
+if not defined READY (
+  echo  [WARN] Server not responding yet, opening browser anyway...
+)
+ping -n 1 127.0.0.1 >nul
 
 rem Open the browser
 start "" http://127.0.0.1:8765/
