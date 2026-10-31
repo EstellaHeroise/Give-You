@@ -41,9 +41,9 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 __version__ = "0.8.0"  # 当前版本，用于自动更新检测 / Current version
 
-# GitHub 仓库地址（开源后替换 <YOUR_GITHUB_USERNAME> 为真实用户名）
-# GitHub repo (replace <YOUR_GITHUB_USERNAME> after open-sourcing)
-GITHUB_REPO = "<YOUR_GITHUB_USERNAME>/deepseek-price-alert"
+# GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
+# GitHub repo (the project lives in the Give-You repo, tool-deepseek branch)
+GITHUB_REPO = "EstellaHeroise/Give-You"
 GITHUB_RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 GITHUB_DOWNLOAD_BASE = f"https://github.com/{GITHUB_REPO}/releases/latest/download"
 

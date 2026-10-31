@@ -88,12 +88,13 @@ python style_picker.html  # 浏览器打开, 点击选择, 点保存下载 confi
 ### 1. 下载 / Download
 
 ```bash
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/deepseek-price-alert.git
-cd deepseek-price-alert
+git clone https://github.com/EstellaHeroise/Give-You.git
+cd Give-You
+git checkout tool-deepseek
 ```
 
-> 把 `<YOUR_GITHUB_USERNAME>` 替换成你自己的 GitHub 用户名。
-> Replace `<YOUR_GITHUB_USERNAME>` with your own GitHub username.
+> 项目托管在作品集仓库 `Give-You` 的 `tool-deepseek` 分支。
+> The project lives in the `tool-deepseek` branch of the portfolio repo `Give-You`.
 
 （或者直接下载 ZIP 解压 / Or just download the ZIP and extract it。）
 

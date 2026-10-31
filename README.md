@@ -123,12 +123,13 @@ python style_picker.html  # 浏览器打开, 点击选择, 点保存下载 confi
 ### 1. 下载 / Download
 
 ```bash
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/deepseek-price-alert.git
-cd deepseek-price-alert
+git clone https://github.com/EstellaHeroise/Give-You.git
+cd Give-You
+git checkout tool-deepseek
 ```
 
-> 把 `<YOUR_GITHUB_USERNAME>` 替换成你自己的 GitHub 用户名。
-> Replace `<YOUR_GITHUB_USERNAME>` with your own GitHub username.
+> 项目托管在作品集仓库 `Give-You` 的 `tool-deepseek` 分支。
+> The project lives in the `tool-deepseek` branch of the portfolio repo `Give-You`.
 
 （或者直接下载 ZIP 解压 / Or just download the ZIP and extract it。）
 
@@ -174,7 +175,7 @@ python deepseek_price_alert.py --check-update
 - **安装向导**：每次启动时检测最新安装包版本，发现新版打印提示。
 - **手动检查**：随时运行 `python deepseek_price_alert.py --check-update`。
 
-> 注意：检测功能需要先配置 GitHub 仓库地址（替换 `deepseek_price_alert.py` 与 `installer.py` 中的 `<YOUR_GITHUB_USERNAME>`），并配合 GitHub Releases 发布使用。当前仅提示，不自动下载替换（保持零依赖与安全）。
+> 说明：GitHub 仓库地址已配置为 `EstellaHeroise/Give-You`（`tool-deepseek` 分支）。检测功能配合 GitHub Releases 发布使用。当前仅提示，不自动下载替换（保持零依赖与安全）。
 
 ---
 

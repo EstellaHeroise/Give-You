@@ -129,7 +129,7 @@ All notable changes to this project will be documented in this file. The format 
 - 检测逻辑内置在 `deepseek_price_alert.py` 与 `installer.py` 中：
   - 主脚本每次 `--once` / 开机 / 定时检查时静默检测，**有新版才提示**，无更新不打扰
   - 安装向导启动时检测一次，发现新版打印下载地址
-- 需要先配置 GitHub 仓库地址（替换两处 `<YOUR_GITHUB_USERNAME>` 占位符），并配合 GitHub Releases 发布
+- GitHub 仓库地址已配置为 `EstellaHeroise/Give-You`（`tool-deepseek` 分支），配合 GitHub Releases 发布即可使用自动更新检测
 - 当前仅**提示**，不自动下载替换（保持零依赖与安全）；未来可扩展为自动下载安装包
 
 ---
@@ -179,7 +179,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ## 🔮 后续计划 / Planned
 
-- [ ] 推送 GitHub 开源（替换 README / LICENSE 中的 `<YOUR_GITHUB_USERNAME>`）
+- [x] 推送 GitHub 开源（已完成：托管于 `EstellaHeroise/Give-You` 的 `tool-deepseek` 分支，占位符已全部替换）
 - [ ] Server酱 / 微信 / 邮件 / Bark 等更多通知渠道
 - [ ] 限时活动页（非定价页）的降价监控
 - [ ] GUI 版本（将 `style_preview.html` 中预览的自定义弹窗风格落地为真实弹窗）

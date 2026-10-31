@@ -42,8 +42,8 @@ from pathlib import Path
 INSTALLER_DIR = Path(__file__).resolve().parent
 VERSION = "0.8.0"
 
-# GitHub 仓库地址（开源后替换为真实用户名）
-GITHUB_REPO = "<YOUR_GITHUB_USERNAME>/deepseek-price-alert"
+# GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
+GITHUB_REPO = "EstellaHeroise/Give-You"
 GITHUB_RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 # 安装目标根目录（默认在用户主目录下，两版本子目录分离，互不冲突）
@@ -405,6 +405,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="DeepSeek 降价提醒工具 二合一安装向导")
     parser.add_argument("--port", type=int, default=8765, help="本地端口 (默认 8765)")
     parser.add_argument("--test", action="store_true", help="自检模式：不打开浏览器")
+    parser.add_argument("--no-browser", action="store_true", help="不自动打开浏览器（由外部脚本打开）")
     args = parser.parse_args()
 
     if not PAGE_FILE.exists():
@@ -424,14 +425,37 @@ def main() -> int:
         log(f"检测到安装包 / Installer zip: {env_zip}（安装完成后可选自动删除）")
     log("=" * 60)
 
-    # 启动时检查是否有新版本
-    check_for_update()
+    # 启动时检查是否有新版本（异步执行，不阻塞安装页面打开）
+    try:
+        import threading
+        threading.Thread(target=check_for_update, daemon=True).start()
+    except Exception:
+        pass
 
-    if not args.test:
+    if not args.test and not args.no_browser:
+        opened = False
+        # 方式1（首选）：用 cmd start 打开默认浏览器（最快，不依赖 Python webbrowser）
         try:
-            webbrowser.open(url)
+            import subprocess
+            subprocess.Popen(
+                ["cmd", "/c", "start", "", url],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            opened = True
         except Exception:
-            print(f"请在浏览器中打开: {url}")
+            opened = False
+        # 方式2（fallback）：Python webbrowser 模块
+        if not opened:
+            try:
+                opened = webbrowser.open(url)
+            except Exception:
+                opened = False
+        if opened:
+            log(f"已自动打开浏览器 / Browser opened: {url}")
+        else:
+            log(f"请手动在浏览器打开 / Please open manually: {url}")
+            print(f"👉 如果浏览器未自动打开，请手动访问: {url}")
 
     try:
         server.serve_forever()
