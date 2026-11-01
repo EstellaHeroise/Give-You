@@ -40,7 +40,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.9.0"
+VERSION = "0.9.1"
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 GITHUB_REPO = "EstellaHeroise/Give-You"
@@ -106,7 +106,10 @@ def check_for_update() -> None:
         if not latest:
             return
     except Exception as exc:
-        log(f"检查更新失败 / Update check failed: {exc}")
+        # 404 = 仓库还没有 Releases（本项目用分支里的 zip 分发），不算错误，静默跳过
+        is_404 = getattr(exc, "code", None) == 404 or "404" in str(exc)
+        if not is_404:
+            log(f"检查更新失败（不影响安装） / Update check failed: {exc}")
         return
 
     if latest != VERSION.lstrip("vV"):
@@ -444,13 +447,33 @@ def main() -> int:
         print(f"❌ 未找到 installer.html（当前目录: {INSTALLER_DIR}）")
         return 1
 
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), InstallerHandler)
-    url = f"http://127.0.0.1:{args.port}/"
+    # 端口被占用（常见于上一次安装窗口没关）时自动往后顺延，最多试 10 个
+    server = None
+    port = args.port
+    last_exc = None
+    for candidate in range(args.port, args.port + 10):
+        try:
+            server = ThreadingHTTPServer(("127.0.0.1", candidate), InstallerHandler)
+            port = candidate
+            break
+        except OSError as exc:
+            last_exc = exc
+    if server is None:
+        print("=" * 60)
+        print(f"[错误] 无法在 127.0.0.1:{args.port} ~ {args.port + 9} 之间启动安装服务。")
+        print(f"       最后一个原因代码: {last_exc}")
+        print("       可能被其它程序占用，或被安全软件拦截。")
+        print("       请关掉其它安装窗口后重试。")
+        print("=" * 60)
+        return 2
+    url = f"http://127.0.0.1:{port}/"
 
     log("=" * 60)
     log("DeepSeek 降价提醒工具 二合一安装向导")
     log(f"版本 / Version: {VERSION}")
     log(f"安装向导地址 / URL: {url}")
+    if port != args.port:
+        log(f"[提示] 端口 {args.port} 被占用，已自动改用 {port}。")
     log("在页面中选择「桌面通用版」或「WorkBuddy 适配版」完成安装。")
     env_zip = os.environ.get(SETUP_ZIP_ENV, "").strip()
     if env_zip:

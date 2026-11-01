@@ -1,16 +1,21 @@
 DeepSeek Price Alert - 二合一安装包
-Version: 0.9.0
-Built: 2026-11-01T04:48:00
+Version: 0.9.1
+Built: 2026-11-02T01:45:00
 Contains: Desktop Edition + WorkBuddy Edition
 Runtime: 内置便携 Python（瘦身后约 31MB，无需用户安装 Python）
 Default paths:
   - Desktop  : D:\deepseek-price-alert\desktop
   - WorkBuddy: %USERPROFILE%\.workbuddy\skills\deepseek-price-alert (auto-detected)
 Launch: 双击 install.bat 即可启动图形安装向导
-Changelog (v0.9.0):
+Changelog (v0.9.1):
+  - 启动器改为在当前窗口运行，日志与报错不再一闪而过
+  - 端口 8765 被占用时自动顺延到 8766~8774
+  - install.bat 加 chcp 65001，中文提示不再乱码
+  - 找不到内置 Python 时给出可操作提示
+  - 更新检查遇到 404 不再打印报错
+ (v0.9.0):
   - 内置便携 Python，用户无需自行安装
   - 洗白启动器 install.bat（去掉静默后台/清代理等易误报特征）
   - 自动生成 run.bat，用内置 Python 运行工具
   - 桌面版默认安装到 D:\deepseek-price-alert（可自定义）
   - WorkBuddy 版默认安装到 ~/.workbuddy/skills/deepseek-price-alert（WorkBuddy 自动识别）
-  - README 新增杀软误报处理说明

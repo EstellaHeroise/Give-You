@@ -31,6 +31,11 @@ The installer bundles both editions — download once, choose your edition durin
 
 > 安装向导为本地网页（`http://127.0.0.1:8765`），不上传任何数据。
 > 若想保留安装包，在安装界面取消勾选「安装完成后自动删除下载的安装包」即可。
+>
+> 如果黑窗里提示「端口 8765 被占用」，不用管，安装向导会自动换到 8766~8774 里的空闲端口，并把这行地址打印出来。
+
+**⚠️ 请优先使用最新版（0.9.1 及以后）**：这些版本内置便携 Python，解压双击即可用，电脑上装不装 Python 都行。
+**0.8.0 及更早的版本没有内置 Python**，需要电脑里已经装好 Python 3.8+ 并加入 PATH，否则双击 `install.bat` 后黑窗会提示找不到 Python、浏览器也不会打开。除非有特殊理由，不要在 0.8.0 上排查问题。
 
 **安装完成后如何运行桌面版**：前往 `D:\deepseek-price-alert\desktop`，双击 `run.bat` 即可（同样无需安装 Python，它用的是安装时自带的内置 Python）。首次运行请先执行一次 `run.bat --init` 建立价格基线。
 
@@ -45,6 +50,13 @@ The installer bundles both editions — download once, choose your edition durin
 ---
 
 ## 🆕 更新日志 / Changelog
+
+### v0.9.1（2026-11-02）
+- 🪟 **报错不再一闪而过**：`install.bat` 改成在当前窗口里直接运行安装服务，日志和报错全部留在黑窗中，失败时窗口会停住等你截图
+- 🔌 **端口占用自动顺延**：8765 被占用时自动改用 8766~8774 的空闲端口，并在日志里写明改用了哪个
+- 🈶 **中文不再乱码**：`install.bat` 开头加 `chcp 65001`
+- 💡 **找不到内置 Python 时给出可操作提示**：直接告诉用户「多半是只解压了 install.bat」以及正确的解压步骤
+- 🔇 更新检查遇到 404（仓库暂无 Releases）时不再打印「检查更新失败」，避免误导
 
 ### v0.9.0（2026-11-01）
 - 🐍 **内置便携 Python**：安装包自带 Windows 便携 Python（瘦身后约 31MB），下载解压双击即可用，**无需用户自行安装 Python**

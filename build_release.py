@@ -12,11 +12,13 @@ build_release.py — 打包二合一安装包
   - installer.html       # 图形选择页面（两个版本卡片）
   - desktop/             # 桌面通用版文件
   - skill/               # WorkBuddy 适配版文件（SKILL.md + 脚本）
-  - README.md / LICENSE
+  - python/              # 内置便携 Python 运行时（瘦身后的 CPython）
+  - prune_releases.py    # 版本保留脚本
+  - README.md / LICENSE / BUILD_INFO.txt
 
 用法 / Usage:
-  python build_release.py                # 输出到 dist/
-  python build_release.py --version 0.5.0
+  python build_release.py --version 0.9.1
+  python build_release.py --version 0.9.1 --python-src "D:\\某处\\python"
 
 原创使用许可 (Original Works License).
 本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。
@@ -28,15 +30,16 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DIST_DIR = ROOT / "dist"
 
-# 需要打进安装包的文件（相对于 ROOT）
+# 需要打进安装包的文件/目录（相对于 ROOT）
 RELEASE_FILES = [
     "install.bat",
     "installer.py",
     "installer.html",
+    "prune_releases.py",
     "README.md",
     "LICENSE",
+    "BUILD_INFO.txt",
     # 桌面通用版（独立程序）
     "desktop/deepseek_price_alert.py",
     "desktop/style_preview.html",
@@ -51,11 +54,17 @@ RELEASE_FILES = [
 ]
 
 
-def build(version: str) -> Path:
-    DIST_DIR.mkdir(parents=True, exist_ok=True)
-    zip_name = f"deepseek-price-alert-setup-{version}.zip"
-    zip_path = DIST_DIR / zip_name
+def build(version: str, python_src: Path, out_dir: Path) -> Path:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    zip_path = out_dir / f"deepseek-price-alert-setup-{version}.zip"
 
+    if not (python_src / "python.exe").exists():
+        raise SystemExit(
+            f"❌ 找不到内置 Python：{python_src / 'python.exe'}\n"
+            f"   请用 --python-src 指定一个包含 python.exe 的便携 Python 目录。"
+        )
+
+    count = 0
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for rel in RELEASE_FILES:
             src = ROOT / rel
@@ -63,28 +72,39 @@ def build(version: str) -> Path:
                 print(f"⚠️ 跳过缺失文件 / Skipping missing: {rel}")
                 continue
             zf.write(src, arcname=rel)
-            print(f"📦 打包 / Packed: {rel} ({src.stat().st_size} B)")
+            count += 1
+            print(f"📦 {rel} ({src.stat().st_size} B)")
 
-        # 写一个构建信息文件
-        info = (
-            f"DeepSeek Price Alert - 二合一安装包\n"
-            f"Version: {version}\n"
-            f"Built: {datetime.now().isoformat(timespec='seconds')}\n"
-            f"Contains: Desktop Edition + WorkBuddy Edition\n"
-        )
-        zf.writestr("BUILD_INFO.txt", info)
-        print("📦 打包 / Packed: BUILD_INFO.txt")
+        # 内置便携 Python（递归整棵树，跳过 __pycache__ / *.pyc）
+        skipped = 0
+        for p in sorted(python_src.rglob("*")):
+            if not p.is_file():
+                continue
+            if "__pycache__" in p.parts or p.suffix == ".pyc":
+                skipped += 1
+                continue
+            zf.write(p, arcname=f"python/{p.relative_to(python_src).as_posix()}")
+            count += 1
+        print(f"🐍 python/ 已打包（跳过缓存 {skipped} 个，累计条目 {count}）")
 
+    size_mb = zip_path.stat().st_size / 1024 / 1024
     print(f"\n✅ 安装包已生成 / Release zip created: {zip_path}")
-    print(f"   大小 / Size: {zip_path.stat().st_size / 1024:.1f} KB")
+    print(f"   大小 / Size: {size_mb:.2f} MB，条目数 / Entries: {count}")
     return zip_path
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="打包 DeepSeek 降价提醒 二合一安装包")
-    parser.add_argument("--version", default="0.8.0", help="版本号 (默认 0.8.0)")
+    parser.add_argument("--version", default="0.9.1", help="版本号 (默认 0.9.1)")
+    parser.add_argument(
+        "--python-src",
+        default=str(ROOT / "python"),
+        help="内置便携 Python 目录（包含 python.exe）",
+    )
+    parser.add_argument("--out", default=str(ROOT), help="输出目录（默认仓库根目录）")
     args = parser.parse_args()
-    build(args.version)
+
+    build(args.version, Path(args.python_src), Path(args.out))
     return 0
 
 
