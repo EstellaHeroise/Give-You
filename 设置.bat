@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title 改提醒的样子 - DeepSeek 降价提醒
+title 设置 - DeepSeek 降价提醒
 cd /d "%~dp0"
 
 if not exist "desktop\style_tool.py" (

@@ -1,15 +1,21 @@
 DeepSeek Price Alert - 二合一安装包
-Version: 0.9.5
-Built: 2026-11-04T04:57:08
+Version: 0.9.6
+Built: 2026-11-04T06:31:07
 Contains: Desktop Edition + WorkBuddy Edition
 Runtime: 内置便携 Python（瘦身后约 31MB，无需用户安装 Python）
 Default paths:
   - Desktop  : D://deepseek-price-alert//desktop
   - WorkBuddy: %USERPROFILE%\.workbuddy\skills\deepseek-price-alert (auto-detected)
 Launch: 双击 install.bat 即可启动图形安装向导
-Change style: 安装后双击安装根目录的「改风格.bat」（只改 config.json，不重装）
+Settings: 安装后双击安装根目录的「设置.bat」（看状态 / 改检查频率 / 改外观，不重装）
 Uninstall: 安装后双击安装根目录里的 uninstall.bat 一键清理
-Changelog (v0.9.5):
+Changelog (v0.9.6):
+  - 新增：设置.bat（原改风格.bat 升级）—— 状态 + 检查频率 + 外观 三块一个页面
+          改频率不再需要命令行，保存时直接重建计划任务并把 schtasks 输出显示出来
+  - 变更：安装包内 改风格.bat -> 设置.bat；重装时自动移除旧的 改风格.bat
+  - 变更：style_tool.py 新增 /api/current 状态接口、/api/quit 退出接口
+  - 说明：「下次检查」是按设置推算的，页面已标注；真实触发器以系统任务计划程序为准
+ (v0.9.5):
   - 新增：定时检查可以「每 N 小时」一次（安装向导里选，或用命令行 --every 4 --at 09:00）
           安装页新增「多久自己查一次价格？」区块：先不设 / 每天一次 / 每 2·3·4·6·8·12 小时
   - 新增：命令行 --every N [--at HH:MM]；--setup-schedule HH:MM 用法不变

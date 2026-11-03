@@ -55,7 +55,7 @@ for _stream_name in ("stdout", "stderr"):
 # --------------------------------------------------------------------------
 # 常量配置 / Constants
 # --------------------------------------------------------------------------
-__version__ = "0.9.5"  # 当前版本，用于自动更新检测 / Current version
+__version__ = "0.9.6"  # 当前版本，用于自动更新检测 / Current version
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 # GitHub repo (the project lives in the Give-You repo, tool-deepseek branch)

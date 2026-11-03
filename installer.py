@@ -45,7 +45,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.9.5"
+VERSION = "0.9.6"
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 GITHUB_REPO = "EstellaHeroise/Give-You"
@@ -419,11 +419,13 @@ def apply_schedule(target_dir, schedule) -> dict:
 # 安装逻辑 / Install logic
 # --------------------------------------------------------------------------
 # 放到安装根目录的辅助脚本（双击即用，不在 desktop 子目录里，方便找）
-HELPER_SCRIPTS = ("uninstall.bat", "改风格.bat")
+HELPER_SCRIPTS = ("uninstall.bat", "设置.bat")
+# v0.9.6 起 改风格.bat 并进「设置.bat」；老安装目录里那份留着会让人以为有两个入口
+LEGACY_HELPERS = ("改风格.bat",)
 
 
 def copy_helper_scripts(target_root: Path) -> list:
-    """把卸载 / 改风格脚本复制到安装根目录。返回实际复制成功的文件列表。"""
+    """把卸载 / 设置脚本复制到安装根目录。返回实际复制成功的文件列表。"""
     copied = []
     for name in HELPER_SCRIPTS:
         src = INSTALLER_DIR / name
@@ -435,6 +437,17 @@ def copy_helper_scripts(target_root: Path) -> list:
             log(f"复制辅助脚本 / Copied helper: {target_root / name}")
         except OSError as exc:
             log(f"复制辅助脚本失败 / Failed to copy {name}: {exc}")
+
+    # 新版设置脚本已就位时，删掉旧版留下的同名旧入口（是我们自己生成的文件）
+    if (target_root / "设置.bat").exists():
+        for old in LEGACY_HELPERS:
+            legacy = target_root / old
+            if legacy.exists():
+                try:
+                    legacy.unlink()
+                    log(f"移除旧入口 / Removed legacy helper: {legacy}")
+                except OSError as exc:
+                    log(f"移除旧入口失败 / Failed to remove {old}: {exc}")
     return copied
 
 
@@ -450,7 +463,7 @@ def install_desktop(target_root: Path, enable_startup: bool, style=None, schedul
 
     copy_tree(SOURCE_DESKTOP, target_dir)
     deploy_runtime(target_dir)
-    # 卸载 / 改风格 脚本放到安装根目录，之后双击即可
+    # 卸载 / 设置 脚本放到安装根目录，之后双击即可
     results_helpers = copy_helper_scripts(target_root)
 
     results = {
@@ -607,6 +620,7 @@ class InstallerHandler(BaseHTTPRequestHandler):
         """
         附带的风格页（style_preview.html / style_picker.html）。
         v0.9.3：安装向导里可以直接打开它们，装完再想改风格也不用去翻文件夹。
+        v0.9.6：改风格已并进「设置.bat」（还能改检查频率、看当前状态）。
         """
         target = INSTALLER_DIR / "desktop" / rel_path
         if not target.exists():

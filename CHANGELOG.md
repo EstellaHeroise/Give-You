@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.9.6] - 2026-11-04
+
+### 新增 / Added
+- **`设置.bat`（原 `改风格.bat` 升级）**：一个本地页面里同时做三件事——
+  看状态（多久查一次 / 下次推算时刻 / 开机自启 / 上次检查）、改检查频率、改外观。保存一次全部生效
+- 页面里改频率不再需要命令行：选「每天一次」或「每 N 小时」→ 保存时调用主脚本重建 Windows 计划任务，
+  并把 `schtasks` 的原始输出原样显示在页面上（成没成一眼能看到，不用猜）
+- 页面新增「看完了，关掉」按钮；20 分钟无人操作自动退出，不留看不见的后台进程占端口
+
+### 变更 / Changed
+- `desktop/style_tool.py` 从"只写 config.json"改成"设置页"：新增 `GET /api/current` 返回状态、
+  `POST /api/quit` 主动退出；`POST /api/save` 改为接收 `{style, schedule}`，
+  同时兼容老格式（三个外观字段平铺在顶层）
+- 外观与频率都只在**用户真正改过**时才提交：只改外观不会碰系统里已有的计划任务，反之亦然
+- 安装包里 `改风格.bat` → `设置.bat`；重装时会自动移除老目录里的 `改风格.bat`，避免两个入口并存
+- 状态栏里的「系统里还没这个任务」用琥珀色提示并说明"保存一次就会建好"，不用红色吓人
+
+### 说明 / Notes
+- 「下次检查」是按 `schedule_time` + `schedule_every` **推算**的，不是从 Windows 任务里读出的真实触发器；
+  页面上明确标注「按当前设置推算」。真实触发器若被手动改过，以系统「任务计划程序」为准
+- 任务是否真的存在，仍通过注册表 `TaskCache\Tree\DeepSeekPriceAlertDaily` 判断（不调用 `schtasks` 查询）
+
 ## [v0.9.5] - 2026-11-04
 
 ### 新增 / Added

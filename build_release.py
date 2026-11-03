@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parent
 RELEASE_FILES = [
     "install.bat",
     "uninstall.bat",
-    "改风格.bat",
+    "设置.bat",
     "installer.py",
     "installer.html",
     "prune_releases.py",
