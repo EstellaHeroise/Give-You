@@ -2,11 +2,11 @@
 name: deepseek-price-alert
 display_name: DeepSeek 官方 API 降价提醒
 display_name_en: DeepSeek Official API Price Drop Alert
-description: 监控 DeepSeek 官方 API 定价页与官方公告，token 降价时提醒用户。支持查看当前价格、建立价格基线、单次检查、查看历史、设置开机自启/每日定时提醒。触发词：DeepSeek 降价、DeepSeek 价格、token 降价、查看 DeepSeek 价格、deepseek price、降价提醒、价格监控、deepseek-price-alert。
-description_zh: 监控 DeepSeek 官方 API 定价页（api-docs.deepseek.com/quick_start/pricing）与官方公告（/updates），一旦 token 价格下降或官方发布降价/优惠公告，立即提醒用户。可查看当前各模型价格、价格历史、建立基线，并支持开机自启与每日定时提醒。零第三方依赖，纯 Python 标准库。
+description: 监控 DeepSeek 官方 API 定价页与官方公告，token 降价时提醒用户。支持查看当前价格、建立价格基线、单次检查、查看历史、设置开机自启、每天定时提醒或每 N 小时检查。触发词：DeepSeek 降价、DeepSeek 价格、token 降价、查看 DeepSeek 价格、deepseek price、降价提醒、价格监控、deepseek-price-alert。
+description_zh: 监控 DeepSeek 官方 API 定价页（api-docs.deepseek.com/quick_start/pricing）与官方公告（/updates），一旦 token 价格下降或官方发布降价/优惠公告，立即提醒用户。可查看当前各模型价格、价格历史、建立基线，并支持开机自启、每天定时提醒或每 N 小时自动检查。零第三方依赖，纯 Python 标准库。
 description_en: Monitor DeepSeek official API pricing page and announcements; alert the user when token prices drop. Supports viewing current prices, price history, baseline init, and one-time checks. Zero third-party dependencies (Python stdlib only).
 category: 开发工具
-version: 0.9.4
+version: 0.9.5
 author: deepseek-price-alert
 license: 原创使用许可 (Original Works License)
 visibility: "public"
@@ -21,7 +21,7 @@ visibility: "public"
 - 用户想知道 DeepSeek API 当前各模型的价格
 - 用户想检查 DeepSeek 是否降价 / 有无优惠活动
 - 用户想查看历史价格记录
-- 用户想设置开机自启或每日定时提醒
+- 用户想设置开机自启、每天定时检查，或改成每几小时查一次
 - 用户说「DeepSeek 降价提醒」「token 降价」「查看 DeepSeek 价格」等
 
 ## 前置要求
@@ -54,8 +54,9 @@ SCRIPT="$SCRIPT_DIR/deepseek_price_alert.py"
 | 检查是否有新版本 | `python "$SCRIPT" --check-update` |
 | 设置开机自启（Windows） | `python "$SCRIPT" --setup-startup` |
 | 取消开机自启（Windows） | `python "$SCRIPT" --remove-startup` |
-| 设置每日定时提醒（Windows） | `python "$SCRIPT" --setup-schedule 09:30` |
-| 取消每日定时提醒（Windows） | `python "$SCRIPT" --remove-schedule` |
+| 设置每天定时检查（Windows） | `python "$SCRIPT" --setup-schedule 09:30` |
+| 设置每 N 小时检查（Windows） | `python "$SCRIPT" --every 4 --at 09:00` |
+| 取消定时检查（Windows） | `python "$SCRIPT" --remove-schedule` |
 | 查看提醒功能状态（Windows） | `python "$SCRIPT" --status` |
 
 ### 3. 执行并解读输出
@@ -66,14 +67,15 @@ SCRIPT="$SCRIPT_DIR/deepseek_price_alert.py"
 - **`--once`**：若价格无变化，输出 `价格无下降变化 / No price drop detected.`，应告知用户当前价格稳定。
 - **`--init`**：输出各模型价格基线，表示首次建立成功。
 - **`--history`**：按模型打印历史价格，最后附已见公告数。
-- **`--status`**：显示开机自启/每日定时提醒是否启用、当前提醒方式（popup 仅弹窗 / popup_sound 弹窗+声音）。
+- **`--status`**：显示开机自启是否启用、定时检查的当前频率（每天几点 / 每 N 小时）、当前提醒方式（popup 仅弹窗 / popup_sound 弹窗+声音）。
 
 ### 4. 处理错误
 
 若命令返回非 0 退出码：
 
 - 网络失败：`抓取/解析价格失败 / Fetch or parse failed: ...` → 检查网络或稍后重试。
-- 时间格式错误：`定时提醒 --setup-schedule` 需 24 小时制 `HH:MM`。
+- 时间格式错误：`--setup-schedule` / `--at` 需 24 小时制 `HH:MM`。
+- 间隔超范围：`--every` 只能是 1~23 小时（Windows 计划任务 /MO 的硬限制），写成 0 或 24 会直接报错。
 - 非 Windows 平台：`开机自启目前仅支持 Windows` → 提示用户该功能仅 Windows 可用。
 
 ## 注意事项

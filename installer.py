@@ -16,6 +16,8 @@ installer.py — DeepSeek 降价提醒工具 二合一安装向导
   - 后端按选择执行安装：复制文件、可选配置开机自启等
   - v0.9.3 起：风格选择（终端输出 / 价格单位 / 提醒方式）合并进安装向导，
     安装时直接写入 config.json，用户不必再单独打开 style_picker.html 搬文件
+  - v0.9.5 起：检查频率（每天一次 / 每 N 小时 / 只开机查）也进安装向导，
+    安装时直接创建 Windows 计划任务
 
 用法 / Usage:
   python installer.py            # 启动安装向导（默认端口 8765）
@@ -35,6 +37,7 @@ import subprocess
 import sys
 import tempfile
 import webbrowser
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -42,7 +45,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.9.4"
+VERSION = "0.9.5"
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 GITHUB_REPO = "EstellaHeroise/Give-You"
@@ -314,6 +317,105 @@ def write_config(target_dir, style):
 
 
 # --------------------------------------------------------------------------
+# 检查频率 / Schedule  (v0.9.5：安装时直接建 Windows 计划任务)
+# --------------------------------------------------------------------------
+# 只给能整除 24 的间隔：这样每天触发的时刻是固定的，不会一天一天往后飘。
+SCHEDULE_EVERY_CHOICES = (2, 3, 4, 6, 8, 12)
+SCHEDULE_DEFAULT_TIME = "09:30"
+SCHEDULE_MODES = {"off", "daily", "every"}
+
+
+def normalize_schedule(schedule):
+    """
+    校验前端提交的检查频率。非法一律返回 None（当作"用户没动过"，
+    保留系统里已有的任务，不因为一个错值把人家设好的频率删掉）。
+    返回 {"mode": off/daily/every, "every": N, "time": "HH:MM"}
+    """
+    if not isinstance(schedule, dict):
+        return None
+
+    mode = schedule.get("mode")
+    if mode not in SCHEDULE_MODES:
+        return None
+    if mode == "off":
+        return {"mode": "off", "every": 0, "time": ""}
+
+    time_str = str(schedule.get("time") or SCHEDULE_DEFAULT_TIME).strip()
+    try:
+        datetime.strptime(time_str, "%H:%M")
+    except ValueError:
+        time_str = SCHEDULE_DEFAULT_TIME
+
+    if mode == "daily":
+        return {"mode": "daily", "every": 0, "time": time_str}
+
+    try:
+        every = int(schedule.get("every"))
+    except (TypeError, ValueError):
+        return None
+    if not (1 <= every <= 23):  # schtasks /MO 对 HOURLY 的合法范围
+        return None
+    return {"mode": "every", "every": every, "time": time_str}
+
+
+def _target_python(target_dir) -> str:
+    """优先用装到目标目录里的内置 Python，保证和计划任务里的解释器一致。"""
+    bundled = Path(target_dir) / "python" / "python.exe"
+    return str(bundled) if bundled.exists() else ensure_python()
+
+
+def apply_schedule(target_dir, schedule) -> dict:
+    """
+    调用主脚本真正去建（或删）计划任务。
+
+    schedule 为 None → 用户没动频率区，什么都不做，保留系统里已有的任务，
+    这样"重装但没改频率"不会把人家之前设好的频率冲掉。
+    """
+    # mode 留空 = 这次没动它（前端没传 / 这次装法没有桌面程序），
+    # 前端据此不打印任何"已关闭"之类的话，避免说了没做的事
+    out = {"mode": "", "ok": False, "every": 0, "time": "", "detail": ""}
+    sched = normalize_schedule(schedule)
+    if sched is None:
+        out["detail"] = "未选择，保持原样"
+        return out
+
+    script = Path(target_dir) / "deepseek_price_alert.py"
+    if not script.exists():
+        out["detail"] = "主脚本不存在，已跳过"
+        log(f"设置检查频率失败 / Script missing: {script}")
+        return out
+
+    py = _target_python(target_dir)
+    if sched["mode"] == "off":
+        cmd = [py, str(script), "--remove-schedule"]
+    elif sched["mode"] == "daily":
+        cmd = [py, str(script), "--setup-schedule", sched["time"]]
+    else:
+        cmd = [py, str(script), "--every", str(sched["every"]), "--at", sched["time"]]
+
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=60)
+        log(f"检查频率 / Schedule: {' '.join(cmd[1:])} -> rc={r.returncode}")
+        if r.stdout:
+            log(f"  输出 / Output: {r.stdout.strip()}")
+        if r.stderr:
+            log(f"  stderr: {r.stderr.strip()}")
+        lines = [ln for ln in (r.stdout or "").strip().splitlines() if ln.strip()]
+        out.update({
+            "mode": sched["mode"],
+            "ok": r.returncode == 0,
+            "every": sched["every"],
+            "time": sched["time"],
+            "detail": lines[0] if lines else (r.stderr or "").strip(),
+        })
+    except Exception as exc:
+        out["detail"] = f"调用失败: {exc}"
+        log(f"设置检查频率失败 / Failed to apply schedule: {exc}")
+    return out
+
+
+# --------------------------------------------------------------------------
 # 安装逻辑 / Install logic
 # --------------------------------------------------------------------------
 # 放到安装根目录的辅助脚本（双击即用，不在 desktop 子目录里，方便找）
@@ -336,11 +438,12 @@ def copy_helper_scripts(target_root: Path) -> list:
     return copied
 
 
-def install_desktop(target_root: Path, enable_startup: bool, style=None) -> dict:
+def install_desktop(target_root: Path, enable_startup: bool, style=None, schedule=None) -> dict:
     """
     安装桌面通用版。
     1. 复制 desktop/ 下的文件到 <target_root>/desktop
     2. 可选：配置开机自启（调用主脚本 --setup-startup）
+    3. 可选：设置检查频率（每天一次 / 每 N 小时，调用主脚本建计划任务）
     """
     target_dir = target_root / DESKTOP_SUBDIR
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -354,6 +457,7 @@ def install_desktop(target_root: Path, enable_startup: bool, style=None) -> dict
         "version": "桌面通用版 / Desktop Edition",
         "install_dir": str(target_dir),
         "startup": False,
+        "schedule": {},
         "files": [],
         "configs": [],
         "helpers": results_helpers,
@@ -385,23 +489,28 @@ def install_desktop(target_root: Path, enable_startup: bool, style=None) -> dict
             log(f"配置开机自启失败 / Startup setup failed: {exc}")
             results["startup"] = False
 
+    # 检查频率：装完就是定好的（v0.9.5 起合并进安装向导）
+    results["schedule"] = apply_schedule(target_dir, schedule)
+
     return results
 
 
 def install_workbuddy(target_root: Path, also_desktop: bool,
-                      enable_startup: bool, style=None) -> dict:
+                      enable_startup: bool, style=None, schedule=None) -> dict:
     """
     安装 WorkBuddy 适配版。
     1. 复制 skill/ 到 WorkBuddy 用户级 skills 目录（~/.workbuddy/skills/deepseek-price-alert）
     2. 把风格写入该 skill 目录的 config.json（v0.9.3 起）
     3. 若 also_desktop 为真，同时把桌面版程序复制到 <target_root>/desktop（联动版）
     4. 可选：配置开机自启
+    5. 可选：设置检查频率（只有装了联动版才建任务，纯 skill 版不进系统计划任务）
     """
     results = {
         "version": "WorkBuddy 适配版 / WorkBuddy Edition",
         "skill_dir": str(WORKBUDDY_SKILLS_DIR),
         "desktop_dir": None,
         "startup": False,
+        "schedule": {},
         "files": [],
         "configs": [],
         "helpers": [],
@@ -455,6 +564,9 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
             except Exception as exc:
                 log(f"配置开机自启失败 / Startup setup failed: {exc}")
                 results["startup"] = False
+
+        # 检查频率：只有装了联动版才有桌面程序可定时
+        results["schedule"] = apply_schedule(target_dir, schedule)
 
     return results
 
@@ -527,6 +639,8 @@ class InstallerHandler(BaseHTTPRequestHandler):
                 "workbuddy_exists": (INSTALLER_DIR / "skill").exists(),
                 "style_choices": {k: sorted(v) for k, v in STYLE_CHOICES.items()},
                 "style_defaults": STYLE_DEFAULTS,
+                "schedule_every_choices": list(SCHEDULE_EVERY_CHOICES),
+                "schedule_default_time": SCHEDULE_DEFAULT_TIME,
             })
         else:
             self._send_json({"error": "not found"}, 404)
@@ -551,6 +665,7 @@ class InstallerHandler(BaseHTTPRequestHandler):
         cleanup = bool(payload.get("cleanup", True))
         custom_dir = (payload.get("install_dir") or "").strip()
         style = payload.get("style")  # 未动风格区时前端不会传，此时保留用户已有配置
+        schedule = payload.get("schedule")  # 同上：未动频率区时不传，保留系统里已有的任务
 
         # 校验版本选择
         if edition not in ("desktop", "workbuddy"):
@@ -568,9 +683,9 @@ class InstallerHandler(BaseHTTPRequestHandler):
 
         try:
             if edition == "desktop":
-                result = install_desktop(target_root, enable_startup, style)
+                result = install_desktop(target_root, enable_startup, style, schedule)
             else:
-                result = install_workbuddy(target_root, also_desktop, enable_startup, style)
+                result = install_workbuddy(target_root, also_desktop, enable_startup, style, schedule)
 
             # 安装成功后，若用户选择"自动删除安装包"，则清理 ZIP 与解压目录
             cleaned = {}

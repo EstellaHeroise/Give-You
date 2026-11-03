@@ -76,6 +76,18 @@ The installer bundles both editions — download once, choose your edition durin
 
 ## 🆕 更新日志 / Changelog
 
+### v0.9.5（2026-11-04）
+- ⏰ **定时检查频率可选「每 N 小时」**：安装向导里新增「⏰ 多久自己查一次价格？」区块（先不设 / 每天一次 / 每 2·3·4·6·8·12 小时），选完点「开始安装」就把 Windows 计划任务建好，不用再敲命令
+- 💻 新增命令行 `--every N [--at HH:MM]`；`--status` 现在说得清具体频率（如「每 4 小时（起点 09:00）」），不再只有"已设置/未设置"
+- 🪟 计划任务改用内置 `pythonw.exe` 运行：以前每查一次会闪一个黑色命令行窗口，改成定时多次后太吵，现在完全无窗口
+
+### v0.9.4（2026-11-04）
+- 🐛 修复「卸载后文件夹删不掉、还得手动再删一次」：后台清理进程的当前目录就是待删文件夹，Windows 不允许删除它，于是删光内容只留空壳
+- 🎨 新增 `改风格.bat`：装完想改风格，双击它就行，不用重装
+
+### v0.9.3（2026-11-03）
+- 🎨 风格选择合并进安装向导，装完即生效，不用再手动搬 `config.json`
+
 ### v0.9.2（2026-11-03）
 - 🐛 **修开机自启失效的隐藏 Bug**：以前自启脚本里写的是「安装包解压目录」里的 Python，用户一删安装包，开机提醒就**静默失效**（不报错、就是不提醒了）。现在统一指向安装目录内的内置 Python
 - 🐛 **每日定时提醒同一问题一并修复**
@@ -108,7 +120,7 @@ The installer bundles both editions — download once, choose your edition durin
 - 🎯 **只监控 DeepSeek 官方 API 定价**（`api-docs.deepseek.com/quick_start/pricing`），不是第三方转售平台
 - 🔔 **降价自动弹窗提醒**（Windows / macOS / Linux 原生通知，无需任何第三方库），可选弹窗+系统提示音
 - 🚀 **开机提醒**：设备每次开机自动检查一次价格，有降价才提醒
-- ⏰ **每日定时提醒**：设定固定时间，每天到点自动检查一次价格
+- ⏰ **定时检查，频率自己定**（v0.9.5 起）：每天固定一个时刻查一次，或者**每 N 小时查一次**（2/3/4/6/8/12 小时任选）；装的时候就能选好，也可以随时用命令行改
 - 💰 **价格单位可自选**：`$ / 1M tokens`（官方口径）、`¥ / 万token`（直观感受"一分钱一万token"）、`¥ / 百万token`，或自动同时显示两种
 - 🔥 **大额优惠重点提醒**：降幅 ≥50% **或** 价格达到 `¥0.01/万token`（一分钱级）时，自动用 🔥 重点标记
 - 📢 **官方公告监控**：自动监控 DeepSeek 官方 `/updates` 公告列表，发现降价/优惠/新模型公告立即提醒
@@ -116,7 +128,7 @@ The installer bundles both editions — download once, choose your edition durin
 - 📜 **价格历史自动记录**（`price_history.json`），涨价也会记录（仅日志，不弹窗）
 - 🐍 **纯 Python 标准库，零依赖** —— clone 下来就能跑，不用 `pip install` 任何东西
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
-- 💻 **命令行友好**：`--init`、`--once`、`--history`、`--version`、`--help`、`--check-update`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--remove-schedule`、`--status`
+- 💻 **命令行友好**：`--init`、`--once`、`--history`、`--version`、`--help`、`--check-update`、`--setup-startup`、`--remove-startup`、`--setup-schedule HH:MM`、`--every N [--at HH:MM]`、`--remove-schedule`、`--status`
 - 🔄 **自动更新检测**：脚本与安装向导启动时自动检查 GitHub 最新版本，发现新版提示下载（配合 GitHub Releases 使用）
 - 🧹 **安装后自动清理**：安装完成后可自动删除下载的安装包（ZIP）与解压目录，省空间、不留垃圾文件（可在安装界面取消勾选）
 
@@ -268,7 +280,7 @@ python deepseek_price_alert.py --check-update
 
 ---
 
-## ⏰ 开机提醒 + 每日定时提醒 / Startup & Daily Reminder
+## ⏰ 开机提醒 + 定时检查 / Startup & Scheduled Check
 
 脚本内置了两种自动提醒功能，相互独立、可分别开关：
 
@@ -286,19 +298,28 @@ python deepseek_price_alert.py --remove-startup
 
 实现原理：在 Windows「启动」文件夹创建静默运行脚本，开机后自动执行 `--once`。
 
-### ⏰ 每日定时提醒 / Daily reminder
+### ⏰ 定时检查 / Scheduled check
 
-每天固定时间自动触发一次价格检查，**有降价才提醒**。
+两种频率任选，都是**有降价才提醒**：
 
 ```bash
-# 启用每日定时提醒（例如每天 09:30）
+# 1) 每天固定一个时刻查一次（例如每天 09:30）
 python deepseek_price_alert.py --setup-schedule 09:30
 
-# 取消每日定时提醒
+# 2) 每 N 小时查一次（v0.9.5 起）
+python deepseek_price_alert.py --every 4                # 从现在这一刻起算，每 4 小时
+python deepseek_price_alert.py --every 4 --at 09:00     # 从 9:00 起算，每 4 小时
+
+# 取消（两种频率都用同一条命令取消）
 python deepseek_price_alert.py --remove-schedule
 ```
 
-实现原理：通过 Windows 任务计划程序创建每天运行一次的定时任务。
+- 间隔只能是 **1~23 小时**，这是 Windows 计划任务 `schtasks /MO` 本身的限制，超出会直接报错、不会建出半残的任务
+- 建议用 **2 / 3 / 4 / 6 / 8 / 12**：能整除 24，每天触发的时刻是固定的；用 5、7 这类，每天的时刻会往后飘一点
+- 安装向导里同样可以选（v0.9.5 起），只提供上面这 6 个整除值
+
+实现原理：Windows 任务计划程序里的一个任务（`DeepSeekPriceAlertDaily`），`/SC DAILY` 或 `/SC HOURLY /MO N`。
+任务用内置的 `pythonw.exe` 跑，**不会闪黑窗口**；关机或睡眠期间错过的那次不会补跑（Windows 的默认行为）。
 
 ### 🔔 提醒方式 / Reminder channel
 
@@ -315,7 +336,10 @@ python deepseek_price_alert.py --remove-schedule
 python deepseek_price_alert.py --status
 ```
 
-显示开机提醒、每日定时提醒是否已启用，以及当前提醒方式。
+显示开机提醒是否启用、定时检查的**具体频率**（如「每 4 小时（起点 09:00）」或「每天 09:30」），以及当前提醒方式。
+
+> 定时任务的频率本身存在 Windows 里，`config.json` 只留一份备忘（`schedule_mode` / `schedule_every` / `schedule_time`）。
+> 如果是 v0.9.4 及以前设过任务、之后没再改过，会显示「频率未知（旧版本设的，重新设一次就能显示）」——这不影响任务照常运行。
 
 > 提示：以上三个命令仅 Windows 支持。macOS / Linux 可用系统自带的 launchd / cron 实现同样的定时效果。
 

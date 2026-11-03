@@ -159,6 +159,57 @@
     padding: 1px 5px; font-family: Consolas, monospace; font-size: 11px; color: #a8b2c1;
   }
 
+  /* 检查频率（v0.9.5：安装时直接建 Windows 计划任务） */
+  .sched-section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px 16px; margin-bottom: 20px;
+  }
+  .sched-head { display: flex; align-items: center; gap: 10px; }
+  .sched-head h3 { font-size: 15px; font-weight: 700; }
+  .sched-head .optional {
+    font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 1px 8px;
+  }
+  .sched-head .sum { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .sched-sub { font-size: 12px; color: var(--muted); line-height: 1.7; margin: 6px 0 12px; }
+  .sched-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .sched-card {
+    background: var(--panel-2); border: 2px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .sched-card:hover { border-color: var(--accent-2); }
+  .sched-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,124,255,0.18); }
+  .sched-card .nm {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 700;
+  }
+  .sched-card .nm .ck { color: var(--green); font-size: 12px; }
+  .sched-card .ds { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .sched-row { display: none; align-items: center; gap: 10px; margin-top: 14px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  .sched-row.visible { display: flex; }
+  .sched-row input[type="time"] {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 5px 8px; font-size: 13px; font-family: inherit;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 5px 14px; font-size: 12px; cursor: pointer; transition: all .15s ease;
+  }
+  .chip:hover { border-color: var(--accent-2); }
+  .chip.selected { background: rgba(79,124,255,0.18); border-color: var(--accent); color: #fff; }
+  .sched-note {
+    margin-top: 14px; padding: 10px 12px; background: var(--panel-2);
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; font-size: 12px; color: var(--muted); line-height: 1.8;
+  }
+  .sched-section.dimmed .sched-opts,
+  .sched-section.dimmed .sched-row { opacity: .4; pointer-events: none; }
+  .sched-note code {
+    background: #0a0c10; border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 5px; font-family: Consolas, monospace; font-size: 11px; color: #a8b2c1;
+  }
+
   /* 按钮与状态 */
   .actions { text-align: center; }
   .btn-install {
@@ -190,7 +241,7 @@
   <header>
     <h1>📉 DeepSeek 降价提醒 · 安装</h1>
     <p class="sub">装好后，当 DeepSeek 的 API 价格下降时，它会提醒你。<br>下面只需要选一件小事：<b>你希望怎么收到提醒？</b></p>
-    <span class="badge">v<span id="ver">0.9.3</span> · 免费 · 不用注册</span>
+    <span class="badge">v<span id="ver">0.9.5</span> · 免费 · 不用注册</span>
   </header>
 
   <div class="question">
@@ -325,6 +376,38 @@
     </div>
   </div>
 
+  <!-- 检查频率区（v0.9.5：装的时候就把计划任务建好） -->
+  <div class="sched-section" id="sched-section">
+    <div class="sched-head">
+      <h3>⏰ 多久自己查一次价格？</h3>
+      <span class="optional">可选</span>
+      <span class="sum" id="sched-sum">先不设 · 只靠开机查</span>
+    </div>
+    <div class="sched-sub">
+      这是装完之后的自动检查频率，写进 Windows 任务计划里，你不用管它。
+      不选也不影响用，只靠上面那个「开机后自动检查一次」。
+    </div>
+    <div class="sched-opts" id="sched-opts"></div>
+
+    <div class="sched-row" id="sched-every-row">
+      <span>每隔多久：</span>
+      <div class="chips" id="sched-chips"></div>
+    </div>
+
+    <div class="sched-row" id="sched-time-row">
+      <span id="sched-time-label">从几点开始：</span>
+      <input type="time" id="sched-time" value="09:30">
+      <span style="font-size:11px">（按你电脑的本地时间）</span>
+    </div>
+
+    <div class="sched-note" id="sched-note">
+      ℹ️ 定时任务只在<b>电脑开着</b>的时候才会跑；关机、睡眠期间的那一次会错过（醒来会不会补跑，这点我没实测，说不准就直说）。<br>
+      每次查只抓两个官方页面（价格页 + 公告页），几十 KB，不会给 DeepSeek 添麻烦；但也没必要设得比自己看价格还勤。<br>
+      <span style="opacity:.85">装完想改：在工具文件夹里打开命令行跑 <code>--every 4</code> 或 <code>--setup-schedule 09:30</code>；想看现在设的是啥，跑 <code>--status</code>。</span>
+    </div>
+    <div class="sched-note" id="sched-warn" style="display:none;border-left-color:#e5534b"></div>
+  </div>
+
   <!-- 风格选择区（v0.9.3：由 style_picker.html 合并进来，选完直接写进 config.json） -->
   <div class="style-section" id="style-section">
     <div class="style-head" onclick="toggleStyle()">
@@ -367,7 +450,7 @@
   </div>
 
   <footer>
-    DeepSeek 降价提醒 · 二合一安装包 v<span id="ver2">0.9.3</span> · 非 DeepSeek 官方产品
+    DeepSeek 降价提醒 · 二合一安装包 v<span id="ver2">0.9.5</span> · 非 DeepSeek 官方产品
     <div class="footer-note">💡 若想要其他功能，可以私信创作者，说不定会更新哦 <span class="heart">❤</span></div>
   </footer>
 </div>
@@ -377,6 +460,15 @@ let selectedReminder = null;
 
 async function init() {
   renderStyles();
+  renderSchedule();
+  document.getElementById('sched-time').addEventListener('change', (e) => {
+    schedTime = e.target.value || SCHED_DEFAULT_TIME;
+    schedTouched = true;
+    renderSchedule();
+  });
+  // 勾/取消「顺便也装自动弹窗提醒」会改变"能不能建任务"，要跟着刷新
+  const alsoDesktop = document.getElementById('chat-also-desktop');
+  if (alsoDesktop) alsoDesktop.addEventListener('change', renderSchedule);
   try {
     const r = await fetch('/api/info');
     const info = await r.json();
@@ -404,6 +496,7 @@ function selectReminder(reminder) {
   };
   document.getElementById('btn-install').disabled = false;
   setStatus('已选：「' + names[reminder] + '」。点「开始安装」就好。', '');
+  if (typeof renderSchedule === 'function') renderSchedule();
 }
 
 function setStatus(msg, cls) {
@@ -525,6 +618,90 @@ function renderStyles() {
   updateStyleSum();
 }
 
+// ----------------------------------------------------------------------
+// 检查频率（v0.9.5）
+// 默认「先不设」，且只有用户真的点过才提交 —— 这样重装时不会把人家
+// 之前设好的计划任务冲掉（跟风格区同一个思路）。
+// ----------------------------------------------------------------------
+const SCHED_EVERY = [2, 3, 4, 6, 8, 12];
+const SCHED_DEFAULT_TIME = '09:30';
+let schedMode = 'off';           // off / daily / every
+let schedEvery = 4;
+let schedTime = SCHED_DEFAULT_TIME;
+let schedTouched = false;
+
+// 这次选的方式到底会不会装桌面程序（只有装了才建得出计划任务）
+function hasDesktopNow() {
+  if (selectedReminder === 'auto_popup' || selectedReminder === 'both') return true;
+  if (selectedReminder === 'workbuddy_chat') {
+    return document.getElementById('chat-also-desktop').checked;
+  }
+  return false;
+}
+
+// 明确选了「只在 WorkBuddy 里问它」且没勾双保险 —— 这种情况才需要提示
+function noDesktopChosen() {
+  return selectedReminder === 'workbuddy_chat' &&
+         !document.getElementById('chat-also-desktop').checked;
+}
+
+function renderSchedule() {
+  const g = document.getElementById('sched-opts');
+  g.innerHTML = '';
+  const cards = [
+    { key: 'off',   name: '先不设',     desc: '不建定时任务，只靠上面的开机自启' },
+    { key: 'daily', name: '每天查一次', desc: '每天固定一个时刻查，最省事' },
+    { key: 'every', name: '每 N 小时',  desc: '一天查好几回，大额降价能早发现' },
+  ];
+  cards.forEach(c => {
+    const sel = schedMode === c.key;
+    const el = document.createElement('div');
+    el.className = 'sched-card' + (sel ? ' selected' : '');
+    el.innerHTML = '<div class="nm"><span>' + c.name + '</span>' +
+                   (sel ? '<span class="ck">✔</span>' : '') + '</div>' +
+                   '<div class="ds">' + c.desc + '</div>';
+    el.onclick = () => { schedMode = c.key; schedTouched = true; renderSchedule(); };
+    g.appendChild(el);
+  });
+
+  // 间隔胶囊（只给能整除 24 的，每天时刻才固定不飘）
+  const chips = document.getElementById('sched-chips');
+  chips.innerHTML = '';
+  SCHED_EVERY.forEach(n => {
+    const b = document.createElement('div');
+    b.className = 'chip' + (schedEvery === n ? ' selected' : '');
+    b.textContent = '每 ' + n + ' 小时';
+    b.onclick = () => { schedEvery = n; schedTouched = true; renderSchedule(); };
+    chips.appendChild(b);
+  });
+
+  document.getElementById('sched-every-row').classList.toggle('visible', schedMode === 'every');
+  const showTime = (schedMode === 'daily' || schedMode === 'every');
+  document.getElementById('sched-time-row').classList.toggle('visible', showTime);
+  document.getElementById('sched-time-label').textContent =
+    schedMode === 'every' ? '从几点开始算：' : '每天几点查：';
+  const timeInput = document.getElementById('sched-time');
+  if (document.activeElement !== timeInput) timeInput.value = schedTime;
+
+  let sum = '先不设 · 只靠开机查';
+  if (schedMode === 'daily') sum = '每天 ' + schedTime;
+  else if (schedMode === 'every') {
+    sum = '每 ' + schedEvery + ' 小时 · 一天 ' + (24 / schedEvery) + ' 次（' + schedTime + ' 起）';
+  }
+  document.getElementById('sched-sum').textContent = sum;
+
+  // 纯 WorkBuddy 技能版没有桌面程序，建不了计划任务 —— 直接说清楚，不让人白选
+  const dim = noDesktopChosen();
+  document.getElementById('sched-section').classList.toggle('dimmed', dim);
+  const warn = document.getElementById('sched-warn');
+  warn.style.display = dim ? 'block' : 'none';
+  if (dim) {
+    warn.innerHTML = '📌 你现在选的是「只在 WorkBuddy 里问它」，这种装法不会往电脑里放常驻程序，' +
+      '所以定时任务建不了。<br>想要它自己盯着价格：勾上上面那句「顺便也装自动弹窗提醒」，' +
+      '或者直接选最上面的「自动弹窗提醒」。';
+  }
+}
+
 // 把"提醒方式"翻译成后端认识的"版本"
 function reminderToEdition(reminder) {
   if (reminder === 'auto_popup') return 'desktop';
@@ -567,6 +744,15 @@ async function doInstall() {
     appendLog('>>> 风格：' + document.getElementById('style-sum').textContent);
   }
 
+  // 检查频率：只有真的点过、且这次会装桌面程序时才提交
+  // （纯 WorkBuddy 技能版没有桌面程序，建不了计划任务）
+  if (schedTouched && hasDesktopNow()) {
+    const t = document.getElementById('sched-time').value || SCHED_DEFAULT_TIME;
+    schedTime = t;
+    payload.schedule = { mode: schedMode, every: schedEvery, time: t };
+    appendLog('>>> 检查频率：' + document.getElementById('sched-sum').textContent);
+  }
+
   appendLog('>>> 开始安装：' + ({
     auto_popup: '自动弹窗提醒',
     workbuddy_chat: '在 WorkBuddy 里问它',
@@ -588,6 +774,18 @@ async function doInstall() {
       if (res.install_dir) appendLog('   安装位置: ' + res.install_dir);
       if (res.desktop_dir) appendLog('   自动弹窗程序: ' + res.desktop_dir);
       appendLog('   开机自动检查: ' + (res.startup ? '已开启 ✅' : '未开启'));
+      if (res.schedule && res.schedule.mode) {
+        const s = res.schedule;
+        if (s.mode === 'off') {
+          appendLog('   ⏰ 定时检查: 已关闭');
+        } else {
+          const when = (s.mode === 'every')
+            ? ('每 ' + s.every + ' 小时（' + s.time + ' 起）')
+            : ('每天 ' + s.time);
+          appendLog('   ⏰ 定时检查: ' + (s.ok ? '已设置 ✅ ' : '没设上 ⚠️ ') + when +
+                    (s.ok ? '' : (' —— ' + (s.detail || ''))));
+        }
+      }
       appendLog('   共复制 ' + res.files.length + ' 个文件。');
       if (res.configs && res.configs.length) {
         appendLog('   🎨 风格已写入: ' + res.configs.join('  |  '));
@@ -602,6 +800,11 @@ async function doInstall() {
       if (res.desktop_dir) lines.push('   自动弹窗程序在: ' + res.desktop_dir);
       if (res.cleaned && res.cleaned.zip) lines.push('   🧹 安装包已自动删除，桌面不留垃圾文件。');
       if (res.configs && res.configs.length) lines.push('   🎨 风格已保存，装完就是这个样子，不用再手动设置。');
+      if (res.schedule && res.schedule.mode && res.schedule.mode !== 'off' && res.schedule.ok) {
+        lines.push('   ⏰ 定时检查已设好：' + (res.schedule.mode === 'every'
+          ? ('每 ' + res.schedule.every + ' 小时（' + res.schedule.time + ' 起）')
+          : ('每天 ' + res.schedule.time)) + '，电脑开着就会自己查。');
+      }
       setStatus(lines.join('\n'), 'ok');
     } else {
       appendLog('❌ 安装失败: ' + (data.error || '未知错误'));

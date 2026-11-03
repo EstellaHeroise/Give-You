@@ -24,11 +24,21 @@ Monitor DeepSeek official API pricing and alert you when prices drop.
   python deepseek_price_alert.py --check-update  # 手动检查是否有新版本
   python deepseek_price_alert.py          # 默认: 同 --once
 
+提醒频率 / Schedule (Windows):
+  python deepseek_price_alert.py --setup-schedule 09:30   # 每天 9:30 查一次
+  python deepseek_price_alert.py --every 4                # 每 4 小时查一次(从现在起算)
+  python deepseek_price_alert.py --every 4 --at 09:00     # 每 4 小时, 从 9:00 起算
+  python deepseek_price_alert.py --remove-schedule        # 取消定时检查
+  python deepseek_price_alert.py --status                 # 查看当前频率
+  注: 间隔只能是 1~23 小时(Windows 计划任务 /MO 的硬限制)。
+      2/3/4/6/8/12 能整除 24, 每天的时刻是固定的; 5、7 这类每天会往后飘。
+
 原创使用许可 (Original Works License). 数据来源 / Data source: DeepSeek 官方定价页与官方公告 (官方文档).
 本作品由 久禾 原创，欢迎在它的基础上继续创作；若作修改，请让作者知晓。
 """
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -36,10 +46,16 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
+# 定时任务用 pythonw.exe 跑时没有控制台，sys.stdout / sys.stderr 是 None，
+# 直接 print() 会炸。先接到空设备，保证 log() 照样只往日志文件里写。
+for _stream_name in ("stdout", "stderr"):
+    if getattr(sys, _stream_name) is None:
+        setattr(sys, _stream_name, open(os.devnull, "w", encoding="utf-8"))
+
 # --------------------------------------------------------------------------
 # 常量配置 / Constants
 # --------------------------------------------------------------------------
-__version__ = "0.9.4"  # 当前版本，用于自动更新检测 / Current version
+__version__ = "0.9.5"  # 当前版本，用于自动更新检测 / Current version
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 # GitHub repo (the project lives in the Give-You repo, tool-deepseek branch)
@@ -62,7 +78,6 @@ DROP_THRESHOLD = 0.999
 
 # 默认汇率(USD -> CNY), 可通过环境变量 DEEPSEEK_ALERT_USD_CNY 覆盖
 # Default exchange rate, override with env var DEEPSEEK_ALERT_USD_CNY
-import os
 DEFAULT_USD_CNY = float(os.environ.get("DEEPSEEK_ALERT_USD_CNY", "7.1"))
 
 # 大额优惠判定 / "Big deal" thresholds:
@@ -343,6 +358,11 @@ def load_config() -> dict:
         "window_theme": "light",
         "price_unit": "auto",
         "reminder_channel": "popup",  # popup 仅弹窗 / popup_sound 弹窗+声音
+        # 定时检查的"记忆"：真正的频率存在 Windows 计划任务里，
+        # 这里只是留一份记录，好让 --status 能说清"当初设的是多少"。
+        "schedule_mode": "off",       # off 不设 / daily 每天一次 / every 每 N 小时
+        "schedule_every": 0,          # schedule_mode == every 时的间隔小时数
+        "schedule_time": "",          # 每天的时刻，或 every 模式的起点 HH:MM
     }
     if CONFIG_FILE.exists():
         try:
@@ -353,6 +373,13 @@ def load_config() -> dict:
         except (json.JSONDecodeError, OSError):
             pass
     return defaults
+
+
+def save_config(cfg: dict) -> None:
+    """把配置写回 config.json（只用于记录定时检查的设定）。"""
+    CONFIG_FILE.write_text(
+        json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def get_terminal_style() -> str:
@@ -609,6 +636,69 @@ def remove_startup() -> int:
         return 1
 
 
+# schtasks 的 /MO 对 /SC HOURLY 的合法范围就是 1~23（微软文档），超出直接报错
+SCHEDULE_HOURS_MIN = 1
+SCHEDULE_HOURS_MAX = 23
+
+
+def task_python_exe() -> Path:
+    """返回写进计划任务的解释器路径。
+
+    优先用 pythonw.exe：计划任务没有控制台，用 python.exe 每查一次都会闪一个黑窗口；
+    改成"每 N 小时"之后一天要闪好几次，太吵了。
+    """
+    bundled = BASE_DIR / "python"
+    for name in ("pythonw.exe", "python.exe"):
+        cand = bundled / name
+        if cand.exists():
+            return cand
+    return Path(sys.executable)
+
+
+def _create_schedule_task(schedule_args: list) -> int:
+    """按给定的 /SC 参数创建（或覆盖）计划任务，成功返回 0。"""
+    task_name = get_scheduler_task_name()
+    python_exe = task_python_exe()
+    script = str(BASE_DIR / "deepseek_price_alert.py")
+
+    cmd = [
+        "schtasks", "/Create", "/TN", task_name,
+        "/TR", f'"{python_exe}" "{script}" --once',
+        *schedule_args,
+        "/F",
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, encoding="utf-8", errors="replace"
+        )
+    except OSError as exc:
+        print(f"❌ 设置定时提醒失败 / Failed to set schedule: {exc}")
+        return 1
+
+    if result.returncode == 0:
+        return 0
+    err = (result.stderr or result.stdout).strip()
+    print(f"❌ 设置定时提醒失败 / Failed to set schedule: {err}")
+    return 1
+
+
+def _remember_schedule(mode: str, every: int = 0, time_str: str = "") -> None:
+    """把这次的设定记进 config.json，好让 --status 说得清。
+
+    真正的频率存在 Windows 计划任务里，这里只是一份备忘，
+    记不下来也不影响任务本身（--status 会显示"频率未知"）。
+    """
+    cfg = load_config()
+    cfg["schedule_mode"] = mode
+    cfg["schedule_every"] = every
+    cfg["schedule_time"] = time_str
+    try:
+        save_config(cfg)
+    except OSError:
+        pass
+
+
 def setup_schedule(time_str: str) -> int:
     """
     设置每日定时提醒: 通过 schtasks 创建每天固定时间运行 --once 的任务。
@@ -625,34 +715,61 @@ def setup_schedule(time_str: str) -> int:
         print("❌ 时间格式错误，请用 24 小时制 HH:MM，例如 09:30")
         return 1
 
-    task_name = get_scheduler_task_name()
-    python_exe = resolve_python_exe()
-    script = str(BASE_DIR / "deepseek_price_alert.py")
+    rc = _create_schedule_task(["/SC", "DAILY", "/ST", time_str])
+    if rc == 0:
+        _remember_schedule("daily", 0, time_str)
+        print(f"✅ 定时检查已设置：每天 {time_str} 查一次 / Daily at {time_str}")
+        print("   (到点自动检查 DeepSeek 价格，有降价才弹窗)")
+    return rc
 
-    # 构建 schtasks 命令
-    cmd = [
-        "schtasks", "/Create", "/TN", task_name,
-        "/TR", f'"{python_exe}" "{script}" --once',
-        "/SC", "DAILY", "/ST", time_str,
-        "/F",
-    ]
+
+def setup_schedule_interval(hours: str, start_time: str = "") -> int:
+    """
+    设置"每 N 小时查一次"（--every N [--at HH:MM]）。
+
+    用的是 schtasks /SC HOURLY /MO N /ST HH:MM：
+      /MO 就是间隔小时数（官方文档明确 1~23），/ST 是每天起算的时刻，
+      之后按 N 小时往后推。
+    """
+    if not sys.platform.startswith("win"):
+        print("定时提醒目前仅支持 Windows / Schedule is only supported on Windows.")
+        return 1
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
-        if result.returncode == 0:
-            print(f"✅ 每日定时提醒已设置 / Daily reminder set: {time_str}")
-            print("   (每天到点会自动检查 DeepSeek 价格，有降价才提醒)")
-            return 0
-        else:
-            print(f"❌ 设置定时提醒失败 / Failed to set schedule: {result.stderr.strip()}")
-            return 1
-    except OSError as exc:
-        print(f"❌ 设置定时提醒失败 / Failed to set schedule: {exc}")
+        n = int(str(hours).strip())
+    except (TypeError, ValueError):
+        print("❌ 间隔要写成整数小时，例如 --every 4")
         return 1
+
+    if not (SCHEDULE_HOURS_MIN <= n <= SCHEDULE_HOURS_MAX):
+        print(f"❌ 间隔只能是 {SCHEDULE_HOURS_MIN}~{SCHEDULE_HOURS_MAX} 小时"
+              f"（Windows 计划任务本身的限制），你填的是 {n}")
+        return 1
+
+    if start_time:
+        try:
+            datetime.strptime(start_time, "%H:%M")
+        except ValueError:
+            print("❌ 时间格式错误，请用 24 小时制 HH:MM，例如 09:00")
+            return 1
+    else:
+        # 没给起点就从现在这一刻算，设完马上能看到第一次结果
+        start_time = datetime.now().strftime("%H:%M")
+
+    rc = _create_schedule_task(["/SC", "HOURLY", "/MO", str(n), "/ST", start_time])
+    if rc == 0:
+        _remember_schedule("every", n, start_time)
+        print(f"✅ 定时检查已设置：每 {n} 小时查一次（从 {start_time} 起算）"
+              f" / Every {n}h from {start_time}")
+        print(f"   (一天大约 {24 // n} 次，有降价才弹窗；关机或睡眠期间不会跑)")
+        if 24 % n:
+            print(f"   提示：{n} 除不尽 24，每天的时刻会往后飘一点；"
+                  f"想固定时刻建议用 2 / 3 / 4 / 6 / 8 / 12")
+    return rc
 
 
 def remove_schedule() -> int:
-    """取消每日定时提醒."""
+    """取消定时提醒（不管是每天一次还是每 N 小时）。"""
     if not sys.platform.startswith("win"):
         print("定时提醒目前仅支持 Windows / Schedule is only supported on Windows.")
         return 1
@@ -663,11 +780,13 @@ def remove_schedule() -> int:
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
         if result.returncode == 0:
-            print("✅ 已取消每日定时提醒 / Daily reminder disabled.")
+            _remember_schedule("off", 0, "")
+            print("✅ 已取消定时检查 / Schedule disabled.")
         else:
             # 区分"任务不存在"和其他错误
             err = result.stderr.strip()
             if "not found" in err.lower() or "不存在" in err:
+                _remember_schedule("off", 0, "")
                 print("ℹ️ 尚未设置定时提醒 / No scheduled task found.")
             else:
                 print(f"❌ 取消定时提醒失败 / Failed to remove schedule: {err}")
@@ -713,10 +832,22 @@ def show_status() -> int:
         # 无法读取注册表时，退化为"未设置"
         task_exists = False
 
+    # 具体频率记在 config.json 里（任务触发器本身读不出人话，只能靠备忘）
+    cfg = load_config()
+    mode = cfg.get("schedule_mode", "off")
+    every = cfg.get("schedule_every", 0)
+    when = cfg.get("schedule_time", "")
+
     if task_exists:
-        print(f"✅ 每日定时提醒: 已设置 / Daily reminder: enabled")
+        if mode == "every" and isinstance(every, int) and every > 0:
+            detail = f"每 {every} 小时（起点 {when or '?'}）"
+        elif mode == "daily" and when:
+            detail = f"每天 {when}"
+        else:
+            detail = "频率未知（旧版本设的，重新设一次就能显示）"
+        print(f"✅ 定时检查: 已设置 / Schedule: enabled —— {detail}")
     else:
-        print(f"❌ 每日定时提醒: 未设置 / Daily reminder: disabled")
+        print(f"❌ 定时检查: 未设置 / Schedule: disabled")
 
     print(f"\n提醒方式 / Channel: {get_reminder_channel()}"
           f"({'仅弹窗' if get_reminder_channel() == 'popup' else '弹窗+声音'})")
@@ -742,15 +873,30 @@ def main() -> int:
     if "--remove-startup" in args:
         return remove_startup()
 
-    # 每日定时提醒 / Daily schedule
+    # 定时提醒 / Schedule
     if "--setup-schedule" in args:
         # 用法: --setup-schedule HH:MM
         idx = args.index("--setup-schedule")
         if idx + 1 < len(args):
             return setup_schedule(args[idx + 1])
-        print("用法 / Usage: python deepseek_price_alert.py --setup-schedule HH:MM")
-        print("示例 / Example: python deepseek_price_alert.py --setup-schedule 09:30")
+        print("用法 / Usage:")
+        print("  每天查一次 : python deepseek_price_alert.py --setup-schedule 09:30")
+        print("  每 N 小时  : python deepseek_price_alert.py --every 4 [--at 09:00]")
         return 1
+    if "--every" in args:
+        # 用法: --every N [--at HH:MM]
+        idx = args.index("--every")
+        if idx + 1 >= len(args):
+            print("用法 / Usage: python deepseek_price_alert.py --every N [--at HH:MM]")
+            print("示例 / Example: python deepseek_price_alert.py --every 4 --at 09:00")
+            print("      间隔范围 1~23 小时 / Interval must be 1-23 hours")
+            return 1
+        at = ""
+        if "--at" in args:
+            at_idx = args.index("--at")
+            if at_idx + 1 < len(args):
+                at = args[at_idx + 1]
+        return setup_schedule_interval(args[idx + 1], at)
     if "--remove-schedule" in args:
         return remove_schedule()
 

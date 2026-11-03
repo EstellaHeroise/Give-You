@@ -1,6 +1,6 @@
 DeepSeek Price Alert - 二合一安装包
-Version: 0.9.4
-Built: 2026-11-04T00:29:21
+Version: 0.9.5
+Built: 2026-11-04T04:57:08
 Contains: Desktop Edition + WorkBuddy Edition
 Runtime: 内置便携 Python（瘦身后约 31MB，无需用户安装 Python）
 Default paths:
@@ -9,7 +9,15 @@ Default paths:
 Launch: 双击 install.bat 即可启动图形安装向导
 Change style: 安装后双击安装根目录的「改风格.bat」（只改 config.json，不重装）
 Uninstall: 安装后双击安装根目录里的 uninstall.bat 一键清理
-Changelog (v0.9.4):
+Changelog (v0.9.5):
+  - 新增：定时检查可以「每 N 小时」一次（安装向导里选，或用命令行 --every 4 --at 09:00）
+          安装页新增「多久自己查一次价格？」区块：先不设 / 每天一次 / 每 2·3·4·6·8·12 小时
+  - 新增：命令行 --every N [--at HH:MM]；--setup-schedule HH:MM 用法不变
+  - 变更：--status 现在显示具体频率（每 4 小时（起点 09:00）/ 每天 09:30）
+  - 变更：计划任务改用内置 pythonw.exe 运行，不再每查一次闪一个黑窗口
+  - 变更：安装结果新增 schedule 字段；频率备忘写入 config.json（schedule_mode/every/time）
+  - 说明：纯 WorkBuddy 技能版（没勾双保险）建不了定时任务，安装页会把该区块置灰并说明
+ (v0.9.4):
   - 修复：卸载后残留空文件夹（后台清理进程的当前目录就是待删目录，Windows 不允许删它）
           现改为先 cd 到 %TEMP%，并把删除重试 5 次
   - 新增：改风格.bat + desktop/style_tool.py，双击即开、选完直写 config.json，不用重装

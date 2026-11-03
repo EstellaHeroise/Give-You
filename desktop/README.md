@@ -14,7 +14,7 @@ A zero-dependency, cross-platform alert tool for DeepSeek official API price dro
 - 🎯 **只监控 DeepSeek 官方 API 定价**（`api-docs.deepseek.com/quick_start/pricing`），不是第三方转售平台
 - 🔔 **降价自动弹窗提醒**（Windows / macOS / Linux 原生通知，无需任何第三方库），可选弹窗+系统提示音
 - 🚀 **开机提醒**：设备每次开机自动检查一次价格，有降价才提醒
-- ⏰ **每日定时提醒**：设定固定时间，每天到点自动检查一次价格
+- ⏰ **定时检查**：每天固定时刻查一次，或每 N 小时查一次（2/3/4/6/8/12 小时）
 - 💰 **价格单位可自选**：`$ / 1M tokens`（官方口径）、`¥ / 万token`（直观感受"一分钱一万token"）、`¥ / 百万token`，或自动同时显示两种
 - 🔥 **大额优惠重点提醒**：降幅 ≥50% **或** 价格达到 `¥0.01/万token`（一分钱级）时，自动用 🔥 重点标记
 - 📢 **官方公告监控**：自动监控 DeepSeek 官方 `/updates` 公告列表，发现降价/优惠/新模型公告立即提醒
@@ -137,7 +137,7 @@ run.bat --history
 
 ---
 
-## ⏰ 开机提醒 + 每日定时提醒 / Startup & Daily Reminder
+## ⏰ 开机提醒 + 定时检查 / Startup & Scheduled Check
 
 脚本内置了两种自动提醒功能，相互独立、可分别开关：
 
@@ -155,19 +155,28 @@ run.bat --remove-startup
 
 实现原理：在 Windows「启动」文件夹创建静默运行脚本，开机后自动执行 `--once`。
 
-### ⏰ 每日定时提醒 / Daily reminder
+### ⏰ 定时检查 / Scheduled check
 
-每天固定时间自动触发一次价格检查，**有降价才提醒**。
+两种频率任选，都是**有降价才提醒**：
 
 ```bash
-# 启用每日定时提醒（例如每天 09:30）
+# 1) 每天固定一个时刻查一次（例如每天 09:30）
 run.bat --setup-schedule 09:30
 
-# 取消每日定时提醒
+# 2) 每 N 小时查一次（v0.9.5 起）
+run.bat --every 4                 # 从现在这一刻起算，每 4 小时
+run.bat --every 4 --at 09:00      # 从 9:00 起算，每 4 小时
+
+# 取消（两种频率都用这一条）
 run.bat --remove-schedule
 ```
 
-实现原理：通过 Windows 任务计划程序创建每天运行一次的定时任务。
+- 间隔只能是 **1~23 小时**（Windows 计划任务 `schtasks /MO` 的限制），超出直接报错、不会建出半残任务
+- 建议用 **2 / 3 / 4 / 6 / 8 / 12**：能整除 24，每天时刻固定；5、7 这类每天会往后飘一点
+- 装的时候也能选：安装向导里「⏰ 多久自己查一次价格？」区块（v0.9.5 起）
+
+实现原理：Windows 任务计划程序里的任务 `DeepSeekPriceAlertDaily`，`/SC DAILY` 或 `/SC HOURLY /MO N`。
+用内置 `pythonw.exe` 运行，**不闪黑窗口**；关机/睡眠期间错过的那次不补跑（Windows 默认行为）。
 
 ### 🔔 提醒方式 / Reminder channel
 
@@ -184,7 +193,7 @@ run.bat --remove-schedule
 run.bat --status
 ```
 
-显示开机提醒、每日定时提醒是否已启用，以及当前提醒方式。
+显示开机提醒是否启用、定时检查的具体频率（「每 4 小时（起点 09:00）」/「每天 09:30」），以及当前提醒方式。
 
 > 提示：以上三个命令仅 Windows 支持。macOS / Linux 可用系统自带的 launchd / cron 实现同样的定时效果。
 
