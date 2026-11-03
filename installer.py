@@ -40,7 +40,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.9.1"
+VERSION = "0.9.2"
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 GITHUB_REPO = "EstellaHeroise/Give-You"
@@ -244,6 +244,10 @@ def install_desktop(target_root: Path, enable_startup: bool) -> dict:
 
     copy_tree(SOURCE_DESKTOP, target_dir)
     deploy_runtime(target_dir)
+    # 卸载脚本放到安装根目录，之后双击它即可清理干净
+    uninstall_src = INSTALLER_DIR / "uninstall.bat"
+    if uninstall_src.exists():
+        shutil.copy2(uninstall_src, target_root / "uninstall.bat")
 
     results = {
         "version": "桌面通用版 / Desktop Edition",
@@ -313,6 +317,9 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
         target_dir.mkdir(parents=True, exist_ok=True)
         copy_tree(SOURCE_DESKTOP, target_dir)
         deploy_runtime(target_dir)
+        uninstall_src = INSTALLER_DIR / "uninstall.bat"
+        if uninstall_src.exists():
+            shutil.copy2(uninstall_src, target_root / "uninstall.bat")
         results["desktop_dir"] = str(target_dir)
         for item in sorted(target_dir.rglob("*")):
             if item.is_file():

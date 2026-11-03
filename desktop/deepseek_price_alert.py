@@ -39,7 +39,7 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 # 常量配置 / Constants
 # --------------------------------------------------------------------------
-__version__ = "0.9.1"  # 当前版本，用于自动更新检测 / Current version
+__version__ = "0.9.2"  # 当前版本，用于自动更新检测 / Current version
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 # GitHub repo (the project lives in the Give-You repo, tool-deepseek branch)
@@ -541,6 +541,17 @@ def show_history() -> int:
     return 0
 
 
+def resolve_python_exe() -> Path:
+    """返回写进开机自启 / 定时任务里的 Python 路径。
+
+    优先用脚本同目录下的内置 Python（安装后的稳定位置）。
+    不能直接用 sys.executable：从安装包解压目录启动安装时，它指向那个临时目录，
+    用户一删安装包，开机自启和定时任务就会静默失效（0.9.1 及以前的 bug）。
+    """
+    bundled = BASE_DIR / "python" / "python.exe"
+    return bundled if bundled.exists() else Path(sys.executable)
+
+
 def get_startup_script_path() -> Path:
     """返回 Windows 启动文件夹里的启动脚本路径."""
     # 用用户启动文件夹 (shell:startup)
@@ -563,7 +574,7 @@ def setup_startup() -> int:
         return 1
 
     script_path = get_startup_script_path()
-    python_exe = sys.executable
+    python_exe = resolve_python_exe()
     script = rf'''Set ws = CreateObject("Wscript.Shell")
 ws.Run """"{python_exe}"" ""{BASE_DIR / 'deepseek_price_alert.py'}"" --once", 0, False
 '''
@@ -615,7 +626,7 @@ def setup_schedule(time_str: str) -> int:
         return 1
 
     task_name = get_scheduler_task_name()
-    python_exe = sys.executable
+    python_exe = resolve_python_exe()
     script = str(BASE_DIR / "deepseek_price_alert.py")
 
     # 构建 schtasks 命令

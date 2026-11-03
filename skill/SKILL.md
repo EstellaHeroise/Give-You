@@ -6,7 +6,7 @@ description: 监控 DeepSeek 官方 API 定价页与官方公告，token 降价�
 description_zh: 监控 DeepSeek 官方 API 定价页（api-docs.deepseek.com/quick_start/pricing）与官方公告（/updates），一旦 token 价格下降或官方发布降价/优惠公告，立即提醒用户。可查看当前各模型价格、价格历史、建立基线，并支持开机自启与每日定时提醒。零第三方依赖，纯 Python 标准库。
 description_en: Monitor DeepSeek official API pricing page and announcements; alert the user when token prices drop. Supports viewing current prices, price history, baseline init, and one-time checks. Zero third-party dependencies (Python stdlib only).
 category: 开发工具
-version: 0.8.0
+version: 0.9.2
 author: deepseek-price-alert
 license: 原创使用许可 (Original Works License)
 visibility: "public"

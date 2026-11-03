@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.9.2] - 2026-11-03
+
+### 修复 / Fixed
+- **开机自启指向错误的 Python**：以前写进启动文件夹的路径是「安装包解压目录」里的 Python，用户一旦删掉安装包，开机自启就静默失效（不报错、就是不提醒了）。现在优先指向安装目录内的 `python\python.exe`，与安装包解压目录无关
+- **每日定时提醒同样的路径问题**：计划任务也改为指向安装目录内的内置 Python
+- **WorkBuddy 技能版本号**：`SKILL.md` 里还写着 `version: 0.8.0`，已校正为当前版本
+
+### 新增 / Added
+- **一键卸载脚本 `uninstall.bat`**：安装后放在安装根目录，双击即可清理 — 停止本工具进程（按命令行精确匹配，不影响其它 Python 程序）、移除开机自启、删除每日定时任务、删除 WorkBuddy 技能、删除程序文件夹
+
+### 变更 / Changed
+- 安装包内新增 `uninstall.bat`
+
 ## [v0.9.1] - 2026-11-02
 
 ### 变更 / Changed

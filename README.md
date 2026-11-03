@@ -49,7 +49,33 @@ The installer bundles both editions — download once, choose your edition durin
 
 ---
 
+### 卸载 / Uninstall
+
+装好之后，**安装根目录**（默认 `D:\deepseek-price-alert\`）里会有一个 **`uninstall.bat`**，双击它就能一键清理：
+
+1. 停止本工具的进程（按命令行精确匹配，不会误杀你其它的 Python 程序）
+2. 移除开机自启
+3. 删除每日定时提醒
+4. 删除 WorkBuddy 技能（如果装过）
+5. 删除程序文件夹
+
+卸载完成后**建议重启一次电脑**，确认右下角不再弹出提醒。
+
+> 手动卸载也行，共 4 处，删完即可：
+> 1. 安装目录（默认 `D:\deepseek-price-alert`）
+> 2. 启动文件夹里的 `deepseek_price_alert.vbs`（`Win + R` 输入 `shell:startup` 可直接打开）
+> 3. `%USERPROFILE%\.workbuddy\skills\deepseek-price-alert`（WorkBuddy 技能版）
+> 4. 解压出来的安装包文件夹（不是程序本体，可删可留）
+
+---
+
 ## 🆕 更新日志 / Changelog
+
+### v0.9.2（2026-11-03）
+- 🐛 **修开机自启失效的隐藏 Bug**：以前自启脚本里写的是「安装包解压目录」里的 Python，用户一删安装包，开机提醒就**静默失效**（不报错、就是不提醒了）。现在统一指向安装目录内的内置 Python
+- 🐛 **每日定时提醒同一问题一并修复**
+- 🧹 **新增一键卸载 `uninstall.bat`**：双击即清理进程 / 自启 / 定时任务 / WorkBuddy 技能 / 程序文件夹
+- 🏷️ WorkBuddy 技能 `SKILL.md` 里的版本号从 `0.8.0` 校正为当前版本
 
 ### v0.9.1（2026-11-02）
 - 🪟 **报错不再一闪而过**：`install.bat` 改成在当前窗口里直接运行安装服务，日志和报错全部留在黑窗中，失败时窗口会停住等你截图

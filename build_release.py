@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parent
 # 需要打进安装包的文件/目录（相对于 ROOT）
 RELEASE_FILES = [
     "install.bat",
+    "uninstall.bat",
     "installer.py",
     "installer.html",
     "prune_releases.py",
