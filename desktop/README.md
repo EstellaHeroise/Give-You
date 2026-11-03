@@ -36,7 +36,12 @@ A zero-dependency, cross-platform alert tool for DeepSeek official API price dro
 
 > ⚠️ `notification_style`（自定义弹窗外观）与 `window_theme`（窗口主题）目前**主脚本并未读取**，因此不在安装向导里提供选择，只在 `style_preview.html` 中预览。虽然 `config.json` 里有这两个字段，但改了不会影响实际提醒效果。
 
-### 装完之后想改
+### 装完之后想改（v0.9.4 起很轻松）
+
+**推荐：双击安装根目录里的 `改风格.bat`** —— 打开一个本地页面（当前设置已预选好），
+点几下改完按「保存并生效」，直接写进本文件夹的 `config.json`，不重装任何文件，价格历史也不受影响。
+
+其他办法（兜底）：
 
 - 重新跑一次安装包，再选一遍（覆盖 `config.json`，不动价格历史）
 - 或打开 `style_picker.html` 点选，浏览器会下载 `config.json`，手动放到本文件夹（与 `deepseek_price_alert.py` 同级）

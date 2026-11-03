@@ -42,7 +42,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.9.3"
+VERSION = "0.9.4"
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 GITHUB_REPO = "EstellaHeroise/Give-You"
@@ -316,6 +316,26 @@ def write_config(target_dir, style):
 # --------------------------------------------------------------------------
 # 安装逻辑 / Install logic
 # --------------------------------------------------------------------------
+# 放到安装根目录的辅助脚本（双击即用，不在 desktop 子目录里，方便找）
+HELPER_SCRIPTS = ("uninstall.bat", "改风格.bat")
+
+
+def copy_helper_scripts(target_root: Path) -> list:
+    """把卸载 / 改风格脚本复制到安装根目录。返回实际复制成功的文件列表。"""
+    copied = []
+    for name in HELPER_SCRIPTS:
+        src = INSTALLER_DIR / name
+        if not src.exists():
+            continue
+        try:
+            shutil.copy2(src, target_root / name)
+            copied.append(str(target_root / name))
+            log(f"复制辅助脚本 / Copied helper: {target_root / name}")
+        except OSError as exc:
+            log(f"复制辅助脚本失败 / Failed to copy {name}: {exc}")
+    return copied
+
+
 def install_desktop(target_root: Path, enable_startup: bool, style=None) -> dict:
     """
     安装桌面通用版。
@@ -327,10 +347,8 @@ def install_desktop(target_root: Path, enable_startup: bool, style=None) -> dict
 
     copy_tree(SOURCE_DESKTOP, target_dir)
     deploy_runtime(target_dir)
-    # 卸载脚本放到安装根目录，之后双击它即可清理干净
-    uninstall_src = INSTALLER_DIR / "uninstall.bat"
-    if uninstall_src.exists():
-        shutil.copy2(uninstall_src, target_root / "uninstall.bat")
+    # 卸载 / 改风格 脚本放到安装根目录，之后双击即可
+    results_helpers = copy_helper_scripts(target_root)
 
     results = {
         "version": "桌面通用版 / Desktop Edition",
@@ -338,6 +356,7 @@ def install_desktop(target_root: Path, enable_startup: bool, style=None) -> dict
         "startup": False,
         "files": [],
         "configs": [],
+        "helpers": results_helpers,
     }
 
     # 风格配置：装完就是配好的（v0.9.3 起合并进安装向导）
@@ -385,6 +404,7 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
         "startup": False,
         "files": [],
         "configs": [],
+        "helpers": [],
     }
 
     # 1. 复制 skill
@@ -413,9 +433,7 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
         target_dir.mkdir(parents=True, exist_ok=True)
         copy_tree(SOURCE_DESKTOP, target_dir)
         deploy_runtime(target_dir)
-        uninstall_src = INSTALLER_DIR / "uninstall.bat"
-        if uninstall_src.exists():
-            shutil.copy2(uninstall_src, target_root / "uninstall.bat")
+        results["helpers"] = copy_helper_scripts(target_root)
         cfg_desktop = write_config(target_dir, style)
         if cfg_desktop and str(cfg_desktop) not in results["configs"]:
             results["configs"].append(str(cfg_desktop))

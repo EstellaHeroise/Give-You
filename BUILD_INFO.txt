@@ -1,14 +1,20 @@
 DeepSeek Price Alert - 二合一安装包
-Version: 0.9.3
-Built: 2026-11-03T23:55:47
+Version: 0.9.4
+Built: 2026-11-04T00:29:21
 Contains: Desktop Edition + WorkBuddy Edition
 Runtime: 内置便携 Python（瘦身后约 31MB，无需用户安装 Python）
 Default paths:
   - Desktop  : D://deepseek-price-alert//desktop
   - WorkBuddy: %USERPROFILE%\.workbuddy\skills\deepseek-price-alert (auto-detected)
 Launch: 双击 install.bat 即可启动图形安装向导
+Change style: 安装后双击安装根目录的「改风格.bat」（只改 config.json，不重装）
 Uninstall: 安装后双击安装根目录里的 uninstall.bat 一键清理
-Changelog (v0.9.3):
+Changelog (v0.9.4):
+  - 修复：卸载后残留空文件夹（后台清理进程的当前目录就是待删目录，Windows 不允许删它）
+          现改为先 cd 到 %TEMP%，并把删除重试 5 次
+  - 新增：改风格.bat + desktop/style_tool.py，双击即开、选完直写 config.json，不用重装
+  - 变更：安装结果新增 helpers 字段；安装包内新增两个文件
+ (v0.9.3):
   - 新增：风格选择合并进安装向导，安装时直接写入 config.json（不用再手动搬文件）
   - 新增：安装向导内可直接打开风格预览页（/style_preview、/style_picker）
   - 变更：只提供主脚本真正读取的三项（终端风格 / 价格单位 / 提醒方式）

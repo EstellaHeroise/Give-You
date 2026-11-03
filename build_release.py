@@ -35,6 +35,7 @@ ROOT = Path(__file__).resolve().parent
 RELEASE_FILES = [
     "install.bat",
     "uninstall.bat",
+    "改风格.bat",
     "installer.py",
     "installer.html",
     "prune_releases.py",
@@ -43,6 +44,7 @@ RELEASE_FILES = [
     "BUILD_INFO.txt",
     # 桌面通用版（独立程序）
     "desktop/deepseek_price_alert.py",
+    "desktop/style_tool.py",
     "desktop/style_preview.html",
     "desktop/style_picker.html",
     "desktop/README.md",
