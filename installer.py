@@ -14,6 +14,8 @@ installer.py — DeepSeek 降价提醒工具 二合一安装向导
   - 用内置 http.server 启动本地网页安装向导，自动打开浏览器
   - 前端 installer.html 展示两个版本卡片，用户选择后 POST 回本服务
   - 后端按选择执行安装：复制文件、可选配置开机自启等
+  - v0.9.3 起：风格选择（终端输出 / 价格单位 / 提醒方式）合并进安装向导，
+    安装时直接写入 config.json，用户不必再单独打开 style_picker.html 搬文件
 
 用法 / Usage:
   python installer.py            # 启动安装向导（默认端口 8765）
@@ -40,7 +42,7 @@ from pathlib import Path
 # 路径与常量 / Paths & constants
 # --------------------------------------------------------------------------
 INSTALLER_DIR = Path(__file__).resolve().parent
-VERSION = "0.9.2"
+VERSION = "0.9.3"
 
 # GitHub 仓库地址（当前托管于作品集仓库 Give-You 的 tool-deepseek 分支）
 GITHUB_REPO = "EstellaHeroise/Give-You"
@@ -231,9 +233,90 @@ def cleanup_installer(remove_zip: bool = True) -> dict:
 
 
 # --------------------------------------------------------------------------
+# 风格配置 / Style config  (v0.9.3：风格选择已合并进安装向导)
+# --------------------------------------------------------------------------
+# 与 deepseek_price_alert.py 的 load_config() 默认值严格保持一致
+STYLE_DEFAULTS = {
+    "notification_style": "clean",
+    "terminal_style": "log",
+    "window_theme": "light",
+    "price_unit": "auto",
+    "reminder_channel": "popup",
+}
+
+# 只有主脚本真正读取并生效的项才允许在安装向导里选择；
+# notification_style / window_theme 目前仅被预览页使用，主脚本未读取，
+# 因此不列入可选白名单，避免用户选了却不生效。
+STYLE_CHOICES = {
+    "terminal_style": {"log", "table", "compact", "color"},
+    "price_unit": {"auto", "usd_per_1m", "cny_per_10k", "cny_per_1m"},
+    "reminder_channel": {"popup", "popup_sound"},
+}
+
+
+def normalize_style(style):
+    """
+    校验前端提交的风格配置。只保留白名单内的合法值，非法值直接丢弃（不报错，
+    避免因为一个错值导致整个安装失败）。一个合法值都没有时返回 None。
+    """
+    if not isinstance(style, dict):
+        return None
+    picked = {}
+    for key, allowed in STYLE_CHOICES.items():
+        val = style.get(key)
+        if isinstance(val, str) and val in allowed:
+            picked[key] = val
+    return picked or None
+
+
+def write_config(target_dir, style):
+    """
+    把风格写入 <target_dir>/config.json。
+
+    - style 为 None（用户没动风格区）：config.json 已存在就原样保留，
+      不存在才写默认值 —— 保证重装不会把用户已调好的风格冲掉。
+    - style 为 dict：只覆盖它包含的那几项，其余字段保留用户已有值。
+
+    返回写入的路径；跳过或失败时返回 None。
+    """
+    if target_dir is None:
+        return None
+    cfg_file = Path(target_dir) / "config.json"
+    incoming = normalize_style(style)
+
+    existing = {}
+    if cfg_file.exists():
+        try:
+            data = json.loads(cfg_file.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                existing = data
+        except (json.JSONDecodeError, OSError):
+            existing = {}
+
+    if incoming is None:
+        if existing:
+            log(f"保留已有风格配置 / Keep existing config: {cfg_file}")
+            return cfg_file
+        cfg = dict(STYLE_DEFAULTS)
+    else:
+        cfg = {**STYLE_DEFAULTS, **existing, **incoming}
+
+    try:
+        cfg_file.parent.mkdir(parents=True, exist_ok=True)
+        cfg_file.write_text(
+            json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        log(f"已写入风格配置 / Wrote config: {cfg_file} -> {cfg}")
+        return cfg_file
+    except OSError as exc:
+        log(f"写入风格配置失败 / Failed to write config: {exc}")
+        return None
+
+
+# --------------------------------------------------------------------------
 # 安装逻辑 / Install logic
 # --------------------------------------------------------------------------
-def install_desktop(target_root: Path, enable_startup: bool) -> dict:
+def install_desktop(target_root: Path, enable_startup: bool, style=None) -> dict:
     """
     安装桌面通用版。
     1. 复制 desktop/ 下的文件到 <target_root>/desktop
@@ -254,7 +337,13 @@ def install_desktop(target_root: Path, enable_startup: bool) -> dict:
         "install_dir": str(target_dir),
         "startup": False,
         "files": [],
+        "configs": [],
     }
+
+    # 风格配置：装完就是配好的（v0.9.3 起合并进安装向导）
+    cfg_path = write_config(target_dir, style)
+    if cfg_path:
+        results["configs"].append(str(cfg_path))
 
     # 记录已安装文件（便于卸载/查看）
     for item in sorted(target_dir.rglob("*")):
@@ -281,12 +370,13 @@ def install_desktop(target_root: Path, enable_startup: bool) -> dict:
 
 
 def install_workbuddy(target_root: Path, also_desktop: bool,
-                      enable_startup: bool) -> dict:
+                      enable_startup: bool, style=None) -> dict:
     """
     安装 WorkBuddy 适配版。
     1. 复制 skill/ 到 WorkBuddy 用户级 skills 目录（~/.workbuddy/skills/deepseek-price-alert）
-    2. 若 also_desktop 为真，同时把桌面版程序复制到 <target_root>/desktop（联动版）
-    3. 可选：配置开机自启
+    2. 把风格写入该 skill 目录的 config.json（v0.9.3 起）
+    3. 若 also_desktop 为真，同时把桌面版程序复制到 <target_root>/desktop（联动版）
+    4. 可选：配置开机自启
     """
     results = {
         "version": "WorkBuddy 适配版 / WorkBuddy Edition",
@@ -294,6 +384,7 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
         "desktop_dir": None,
         "startup": False,
         "files": [],
+        "configs": [],
     }
 
     # 1. 复制 skill
@@ -311,7 +402,12 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
     except Exception as exc:
         raise RuntimeError(f"安装 WorkBuddy skill 失败: {exc}") from exc
 
-    # 2. 可选：同时安装桌面联动版
+    # 2. 风格配置写进 skill 目录（WorkBuddy 版从这里读）
+    cfg_skill = write_config(WORKBUDDY_SKILLS_DIR, style)
+    if cfg_skill:
+        results["configs"].append(str(cfg_skill))
+
+    # 3. 可选：同时安装桌面联动版
     if also_desktop:
         target_dir = target_root / DESKTOP_SUBDIR
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -320,6 +416,9 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
         uninstall_src = INSTALLER_DIR / "uninstall.bat"
         if uninstall_src.exists():
             shutil.copy2(uninstall_src, target_root / "uninstall.bat")
+        cfg_desktop = write_config(target_dir, style)
+        if cfg_desktop and str(cfg_desktop) not in results["configs"]:
+            results["configs"].append(str(cfg_desktop))
         results["desktop_dir"] = str(target_dir)
         for item in sorted(target_dir.rglob("*")):
             if item.is_file():
@@ -346,7 +445,7 @@ def install_workbuddy(target_root: Path, also_desktop: bool,
 # HTTP 服务 / HTTP server
 # --------------------------------------------------------------------------
 class InstallerHandler(BaseHTTPRequestHandler):
-    server_version = "DeepSeekPriceAlertInstaller/0.5"
+    server_version = f"DeepSeekPriceAlertInstaller/{VERSION}"
 
     def log_message(self, fmt, *args):
         log(f"[http] {self.address_string()} - {fmt % args}")
@@ -374,9 +473,33 @@ class InstallerHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
+    def _send_extra_page(self, rel_path: str):
+        """
+        附带的风格页（style_preview.html / style_picker.html）。
+        v0.9.3：安装向导里可以直接打开它们，装完再想改风格也不用去翻文件夹。
+        """
+        target = INSTALLER_DIR / "desktop" / rel_path
+        if not target.exists():
+            target = INSTALLER_DIR / rel_path
+        try:
+            content = target.read_bytes()
+        except OSError:
+            content = (f"<html><body><h1>{html.escape(rel_path)} 未找到 / Not found</h1>"
+                       "<p>安装包可能不完整，请重新解压。</p></body></html>").encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(content)
+
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             self._send_page()
+        elif self.path in ("/style_preview", "/style_preview.html"):
+            self._send_extra_page("style_preview.html")
+        elif self.path in ("/style_picker", "/style_picker.html"):
+            self._send_extra_page("style_picker.html")
         elif self.path == "/health":
             self._send_json({"ok": True, "version": VERSION})
         elif self.path == "/api/info":
@@ -384,6 +507,8 @@ class InstallerHandler(BaseHTTPRequestHandler):
                 "version": VERSION,
                 "desktop_exists": SOURCE_DESKTOP.exists(),
                 "workbuddy_exists": (INSTALLER_DIR / "skill").exists(),
+                "style_choices": {k: sorted(v) for k, v in STYLE_CHOICES.items()},
+                "style_defaults": STYLE_DEFAULTS,
             })
         else:
             self._send_json({"error": "not found"}, 404)
@@ -407,6 +532,7 @@ class InstallerHandler(BaseHTTPRequestHandler):
         also_desktop = bool(payload.get("also_desktop", False))
         cleanup = bool(payload.get("cleanup", True))
         custom_dir = (payload.get("install_dir") or "").strip()
+        style = payload.get("style")  # 未动风格区时前端不会传，此时保留用户已有配置
 
         # 校验版本选择
         if edition not in ("desktop", "workbuddy"):
@@ -424,9 +550,9 @@ class InstallerHandler(BaseHTTPRequestHandler):
 
         try:
             if edition == "desktop":
-                result = install_desktop(target_root, enable_startup)
+                result = install_desktop(target_root, enable_startup, style)
             else:
-                result = install_workbuddy(target_root, also_desktop, enable_startup)
+                result = install_workbuddy(target_root, also_desktop, enable_startup, style)
 
             # 安装成功后，若用户选择"自动删除安装包"，则清理 ZIP 与解压目录
             cleaned = {}

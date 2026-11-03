@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file. The format 
 
 ---
 
+## [v0.9.3] - 2026-11-03
+
+### 新增 / Added
+- **风格选择合并进安装向导**：安装页面里新增「🎨 想换个提醒的样子吗？」区块，展开即可选终端输出风格、价格显示单位、提醒方式，**点「开始安装」时直接写进 `config.json`**。装完就是配好的，不用再单独打开 `style_picker.html` 再把下载的 `config.json` 手动拖进安装目录（那是最容易卡住的一步）
+- 安装向导内可直接打开风格预览页：新增 `GET /style_preview` 与 `GET /style_picker` 路由，页面里的链接点开即看，不必去翻安装包文件夹
+
+### 变更 / Changed
+- **只提供真正生效的选项**：`notification_style`（通知外观）与 `window_theme`（窗口主题）在主脚本里并未被读取，因此**不放进安装向导的可选列表**，改为链接到预览页展示，避免「选了却不生效」。可选的三项为 `terminal_style` / `price_unit` / `reminder_channel`，均在主脚本中有实际调用点
+- **重装不冲掉用户已有风格**：只有用户真正点过的项目才会提交；没点过的、或先前手动改过的配置原样保留（`config.json` 已存在且未提交风格时不做覆盖）
+- 安装结果里新增 `configs` 字段，页面上会显示风格写入的具体路径
+
+### 修复 / Fixed
+- `installer.html` 版本号兜底值仍硬编码为 `0.5.0`，接口取不到时页面会露出旧版本号，已改为 `0.9.3`
+
 ## [v0.9.2] - 2026-11-03
 
 ### 修复 / Fixed

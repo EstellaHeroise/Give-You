@@ -1,14 +1,21 @@
 DeepSeek Price Alert - 二合一安装包
-Version: 0.9.2
-Built: 2026-11-03T23:10:00
+Version: 0.9.3
+Built: 2026-11-03T23:55:47
 Contains: Desktop Edition + WorkBuddy Edition
 Runtime: 内置便携 Python（瘦身后约 31MB，无需用户安装 Python）
 Default paths:
-  - Desktop  : D:\deepseek-price-alert\desktop
+  - Desktop  : D://deepseek-price-alert//desktop
   - WorkBuddy: %USERPROFILE%\.workbuddy\skills\deepseek-price-alert (auto-detected)
 Launch: 双击 install.bat 即可启动图形安装向导
 Uninstall: 安装后双击安装根目录里的 uninstall.bat 一键清理
-Changelog (v0.9.2):
+Changelog (v0.9.3):
+  - 新增：风格选择合并进安装向导，安装时直接写入 config.json（不用再手动搬文件）
+  - 新增：安装向导内可直接打开风格预览页（/style_preview、/style_picker）
+  - 变更：只提供主脚本真正读取的三项（终端风格 / 价格单位 / 提醒方式）
+          通知外观与窗口主题主脚本未读取，改为预览页展示，不放进可选列表
+  - 变更：重装不冲掉用户已有风格，只覆盖用户点过的项
+  - 修复：installer.html 版本号兜底值仍是 0.5.0
+ (v0.9.2):
   - 修复：开机自启写的是安装包解压目录的 Python，删掉安装包后自启静默失效
   - 修复：每日定时任务同样的路径问题
   - 修复：WorkBuddy 技能 SKILL.md 版本号仍为 0.8.0
@@ -23,5 +30,5 @@ Changelog (v0.9.2):
   - 内置便携 Python，用户无需自行安装
   - 洗白启动器 install.bat（去掉静默后台/清代理等易误报特征）
   - 自动生成 run.bat，用内置 Python 运行工具
-  - 桌面版默认安装到 D:\deepseek-price-alert（可自定义）
+  - 桌面版默认安装到 D://deepseek-price-alert（可自定义）
   - WorkBuddy 版默认安装到 ~/.workbuddy/skills/deepseek-price-alert（WorkBuddy 自动识别）

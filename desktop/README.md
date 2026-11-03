@@ -18,7 +18,7 @@ A zero-dependency, cross-platform alert tool for DeepSeek official API price dro
 - 💰 **价格单位可自选**：`$ / 1M tokens`（官方口径）、`¥ / 万token`（直观感受"一分钱一万token"）、`¥ / 百万token`，或自动同时显示两种
 - 🔥 **大额优惠重点提醒**：降幅 ≥50% **或** 价格达到 `¥0.01/万token`（一分钱级）时，自动用 🔥 重点标记
 - 📢 **官方公告监控**：自动监控 DeepSeek 官方 `/updates` 公告列表，发现降价/优惠/新模型公告立即提醒
-- 🎨 **风格预览与选择**：提供 `style_preview.html`（纯预览）和 `style_picker.html`（点击选择并保存到 `config.json`），支持通知弹窗 / 终端输出 / 窗口主题三组风格 + 价格单位 + 提醒方式
+- 🎨 **风格在安装时就能选**（v0.9.3 起）：安装向导里展开「🎨 想换个提醒的样子吗？」直接选终端输出风格、价格显示单位、提醒方式，装完即生效；另有 `style_preview.html`（12 种风格纯预览）与 `style_picker.html`（装完想改时用）
 - 📜 **价格历史自动记录**（`price_history.json`），涨价也会记录（仅日志，不弹窗）
 - 🐍 **纯 Python 标准库，零依赖** —— clone 下来就能跑，不用 `pip install` 任何东西
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
@@ -28,15 +28,23 @@ A zero-dependency, cross-platform alert tool for DeepSeek official API price dro
 
 ## 🎨 风格预览与选择 / Style Preview & Picker
 
+### 推荐：在安装向导里直接选（v0.9.3 起）
+
+双击 `install.bat` 后，展开安装页面里的「🎨 想换个提醒的样子吗？」，点选卡片再点「开始安装」，风格会直接写进 `config.json`，装完就是你要的样子。
+
+可选的是主脚本**真正会读取**的三项：`terminal_style`（终端输出）、`price_unit`（价格单位）、`reminder_channel`（是否带提示音）。
+
+> ⚠️ `notification_style`（自定义弹窗外观）与 `window_theme`（窗口主题）目前**主脚本并未读取**，因此不在安装向导里提供选择，只在 `style_preview.html` 中预览。虽然 `config.json` 里有这两个字段，但改了不会影响实际提醒效果。
+
+### 装完之后想改
+
+- 重新跑一次安装包，再选一遍（覆盖 `config.json`，不动价格历史）
+- 或打开 `style_picker.html` 点选，浏览器会下载 `config.json`，手动放到本文件夹（与 `deepseek_price_alert.py` 同级）
+- 或直接编辑 `config.json`
+
+### 预览全部风格
+
 打开 `style_preview.html` 可**纯预览**全部风格（三组 × 4 种），通知弹窗同时展示「系统原生弹窗」和「自定义风格弹窗」两种方式。
-
-打开 `style_picker.html` 可**点击选择**并生成 `config.json`，主脚本会自动应用。
-
-```
-python style_picker.html  # 浏览器打开, 点击选择, 点保存下载 config.json
-```
-
-把下载的 `config.json` 放到项目文件夹即可生效。
 
 ### 通知弹窗风格 / Notification styles
 

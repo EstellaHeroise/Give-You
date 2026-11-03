@@ -107,7 +107,7 @@ The installer bundles both editions — download once, choose your edition durin
 - 💰 **价格单位可自选**：`$ / 1M tokens`（官方口径）、`¥ / 万token`（直观感受"一分钱一万token"）、`¥ / 百万token`，或自动同时显示两种
 - 🔥 **大额优惠重点提醒**：降幅 ≥50% **或** 价格达到 `¥0.01/万token`（一分钱级）时，自动用 🔥 重点标记
 - 📢 **官方公告监控**：自动监控 DeepSeek 官方 `/updates` 公告列表，发现降价/优惠/新模型公告立即提醒
-- 🎨 **风格预览与选择**：提供 `style_preview.html`（纯预览）和 `style_picker.html`（点击选择并保存到 `config.json`），支持通知弹窗 / 终端输出 / 窗口主题三组风格 + 价格单位 + 提醒方式
+- 🎨 **风格在安装时就能选**（v0.9.3 起）：安装向导里展开「🎨 想换个提醒的样子吗？」即可选终端输出风格、价格显示单位、提醒方式，装完即生效，无需手动搬配置文件；另有 `style_preview.html`（12 种风格纯预览）与 `style_picker.html`（装完想改时用）
 - 📜 **价格历史自动记录**（`price_history.json`），涨价也会记录（仅日志，不弹窗）
 - 🐍 **纯 Python 标准库，零依赖** —— clone 下来就能跑，不用 `pip install` 任何东西
 - 🌍 **跨平台**：Windows / macOS / Linux 都支持
@@ -117,17 +117,35 @@ The installer bundles both editions — download once, choose your edition durin
 
 ---
 
-## 🎨 风格预览与选择 / Style Preview & Picker
+## 🎨 风格选择 / Style Picker
+
+### 推荐：在安装向导里直接选（v0.9.3 起）
+
+双击 `install.bat` 打开安装页面后，展开中间那一栏「🎨 想换个提醒的样子吗？」，点你喜欢的卡片，然后点「开始安装」。
+
+选好的风格会由安装程序**直接写进 `config.json`**，装完打开就是你要的样子 —— 不需要再去下载一个 `config.json` 再手动拖进安装目录。
+
+可选的只有**主脚本真正会读取**的三项：
+
+| 配置项 | 作用 | 可选值 |
+|---|---|---|
+| `terminal_style` | 命令行里的输出排法 | `log` 日志 / `table` 表格 / `compact` 紧凑 |
+| `price_unit` | 价格用哪种口径显示 | `auto` 自动 / `usd_per_1m` / `cny_per_10k` / `cny_per_1m` |
+| `reminder_channel` | 弹窗时要不要响 | `popup` 只弹窗 / `popup_sound` 弹窗+声音 |
+
+> 安装向导里也会给出「风格预览页」的链接，点开即可看全部 12 种风格（弹窗 4 · 终端 4 · 主题 4）。
+>
+> ⚠️ **说明**：`notification_style`（自定义弹窗外观）与 `window_theme`（窗口主题）目前**主脚本并未读取**，所以安装向导里不提供这两个选项，只在预览页展示。选了不生效的选项比没有选项更误导人，因此暂不开放。
+
+### 装完之后想改风格
+
+- **重新跑一次安装包**：再选一次，覆盖写入 `config.json` 即可（不会动你的价格历史）
+- **或者打开 `style_picker.html`**：点击选择后由浏览器下载一个 `config.json`，手动放到工具目录（与 `deepseek_price_alert.py` 同级）。这一路径仍保留，作为不重装时的兜底
+- **或者直接编辑 `config.json`**：字段就是上表那几项，改完存盘，下次运行生效
+
+### 预览全部风格
 
 打开 `style_preview.html` 可**纯预览**全部风格（三组 × 4 种），通知弹窗同时展示「系统原生弹窗」和「自定义风格弹窗」两种方式。
-
-打开 `style_picker.html` 可**点击选择**并生成 `config.json`，主脚本会自动应用。
-
-```
-python style_picker.html  # 浏览器打开, 点击选择, 点保存下载 config.json
-```
-
-把下载的 `config.json` 放到项目文件夹即可生效。
 
 ### 通知弹窗风格 / Notification styles
 

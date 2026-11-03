@@ -97,6 +97,68 @@
     border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--muted); line-height: 1.7;
   }
 
+  /* 风格选择区（v0.9.3：从 style_picker.html 合并进来） */
+  .style-section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .style-head {
+    display: flex; align-items: center; gap: 10px; padding: 16px 20px;
+    cursor: pointer; user-select: none; transition: background .15s ease;
+  }
+  .style-head:hover { background: var(--panel-2); }
+  .style-head .chev { color: var(--accent-2); font-size: 11px; transition: transform .18s ease; }
+  .style-section.open .style-head .chev { transform: rotate(90deg); }
+  .style-head h3 { font-size: 15px; font-weight: 700; }
+  .style-head .optional {
+    font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 1px 8px;
+  }
+  .style-head .sum { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .style-body { display: none; padding: 4px 20px 20px; border-top: 1px solid var(--border); }
+  .style-section.open .style-body { display: block; }
+  .group { margin-top: 18px; }
+  .group-title { font-size: 13px; font-weight: 700; color: var(--accent-2); }
+  .group-sub { font-size: 12px; color: var(--muted); margin: 3px 0 10px; line-height: 1.6; }
+  .style-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 10px; }
+  .style-card {
+    background: var(--panel-2); border: 2px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .style-card:hover { border-color: var(--accent-2); }
+  .style-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,124,255,0.18); }
+  .style-card .nm {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 700; color: var(--text);
+  }
+  .style-card .nm .ck { color: var(--green); font-size: 12px; }
+  .style-card .ds { font-size: 11px; color: var(--muted); margin: 3px 0 8px; line-height: 1.5; }
+  /* 预览块：刻意保留风格自身的配色，深色外壳里也能看清真实效果 */
+  .pv {
+    border-radius: 6px; overflow: hidden; font-family: Consolas, "Cascadia Code", monospace;
+    font-size: 10px; line-height: 1.55; border: 1px solid transparent;
+  }
+  .pv-term { background: #0a0c10; color: #d4d4d4; padding: 7px 8px; white-space: pre-line; }
+  .pv-unit {
+    background: #f8f8f8; border: 1px solid #e0e0e0; color: #333;
+    padding: 7px 8px; text-align: center;
+  }
+  .pv-sound {
+    display: flex; align-items: center; gap: 6px; color: var(--muted);
+    font-family: -apple-system, "Microsoft YaHei", sans-serif; font-size: 11px; padding: 6px 0;
+  }
+  .style-note {
+    margin-top: 16px; padding: 10px 12px; background: var(--panel-2);
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; font-size: 12px; color: var(--muted); line-height: 1.8;
+  }
+  .style-note a { color: var(--accent-2); text-decoration: none; border-bottom: 1px dashed var(--accent-2); }
+  .style-note a:hover { color: #fff; border-bottom-style: solid; }
+  .style-note code {
+    background: #0a0c10; border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 5px; font-family: Consolas, monospace; font-size: 11px; color: #a8b2c1;
+  }
+
   /* 按钮与状态 */
   .actions { text-align: center; }
   .btn-install {
@@ -128,7 +190,7 @@
   <header>
     <h1>📉 DeepSeek 降价提醒 · 安装</h1>
     <p class="sub">装好后，当 DeepSeek 的 API 价格下降时，它会提醒你。<br>下面只需要选一件小事：<b>你希望怎么收到提醒？</b></p>
-    <span class="badge">v<span id="ver">0.5.0</span> · 免费 · 不用注册</span>
+    <span class="badge">v<span id="ver">0.9.3</span> · 免费 · 不用注册</span>
   </header>
 
   <div class="question">
@@ -263,6 +325,41 @@
     </div>
   </div>
 
+  <!-- 风格选择区（v0.9.3：由 style_picker.html 合并进来，选完直接写进 config.json） -->
+  <div class="style-section" id="style-section">
+    <div class="style-head" onclick="toggleStyle()">
+      <span class="chev">▶</span>
+      <h3>🎨 想换个提醒的样子吗？</h3>
+      <span class="optional">可选</span>
+      <span class="sum" id="style-sum">日志 · 自动 · 仅弹窗</span>
+    </div>
+    <div class="style-body">
+      <div class="group">
+        <div class="group-title">📟 终端输出</div>
+        <div class="group-sub">在命令行里跑的时候，价格信息排成什么样。不展开就用「日志」。</div>
+        <div class="style-grid" id="grid-term"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">💰 价格显示单位</div>
+        <div class="group-sub">同一个价格，用哪种口径讲给你听。不展开就用「自动」，美元和人民币都显示。</div>
+        <div class="style-grid" id="grid-unit"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">🔔 提醒方式</div>
+        <div class="group-sub">降价弹窗出现时，要不要同时响一声。</div>
+        <div class="style-grid" id="grid-channel"></div>
+      </div>
+
+      <div class="style-note">
+        ℹ️ 弹窗的<b>外观</b>由 Windows 系统决定（本版本用的是系统原生弹窗），所以这里不让你选颜色，选了也不会生效——不骗你。<br>
+        想看全部 12 种风格（弹窗 4 · 终端 4 · 主题 4）长什么样：<a href="/style_preview" target="_blank" rel="noopener">打开风格预览页 →</a><br>
+        <span style="opacity:.85">不选也没关系。装完之后想改，到工具文件夹里双击 <code>style_picker.html</code> 就行。</span>
+      </div>
+    </div>
+  </div>
+
   <div class="actions">
     <button class="btn-install" id="btn-install" disabled onclick="doInstall()">开始安装</button>
     <div class="status" id="status">请先选一种提醒方式</div>
@@ -270,7 +367,7 @@
   </div>
 
   <footer>
-    DeepSeek 降价提醒 · 二合一安装包 v<span id="ver2">0.5.0</span> · 非 DeepSeek 官方产品
+    DeepSeek 降价提醒 · 二合一安装包 v<span id="ver2">0.9.3</span> · 非 DeepSeek 官方产品
     <div class="footer-note">💡 若想要其他功能，可以私信创作者，说不定会更新哦 <span class="heart">❤</span></div>
   </footer>
 </div>
@@ -279,6 +376,7 @@
 let selectedReminder = null;
 
 async function init() {
+  renderStyles();
   try {
     const r = await fetch('/api/info');
     const info = await r.json();
@@ -321,6 +419,112 @@ function appendLog(msg) {
   box.scrollTop = box.scrollHeight;
 }
 
+// ----------------------------------------------------------------------
+// 风格选择（v0.9.3：由 style_picker.html 合并进来）
+// 只收录主脚本真正读取并生效的三项；通知外观与窗口主题主脚本不读，
+// 所以不放进可选列表，改为在预览页展示 —— 不让用户选了却不生效。
+// ----------------------------------------------------------------------
+const TERM_STYLES = {
+  log: {
+    name: "日志 Log", short: "日志", desc: "[时间] 消息，最常规",
+    lines: "[2026-11-03 09:00:00] 价格无下降变化\n[2026-11-03 09:00:00] 检查完成"
+  },
+  table: {
+    name: "表格 Table", short: "表格", desc: "带竖线的对齐列",
+    lines: "| 2026-11-03 09:00 | 价格无下降 |\n| deepseek-flash   | $0.6/1M    |"
+  },
+  compact: {
+    name: "紧凑 Compact", short: "紧凑", desc: "无时间戳，最短",
+    lines: "no price drop\ncheck finished"
+  },
+};
+
+const UNIT_STYLES = {
+  auto:        { name: "自动 Auto",     short: "自动",   desc: "美元 + 人民币都显示", pv: "$0.6/1M = ¥0.0426/万" },
+  usd_per_1m:  { name: "$ / 百万token", short: "美元",   desc: "官方美元口径",        pv: "$0.6/1M" },
+  cny_per_10k: { name: "¥ / 万token",   short: "万元",   desc: "人民币，最直观",      pv: "¥0.0426/万token" },
+  cny_per_1m:  { name: "¥ / 百万token", short: "百万元", desc: "人民币，官方口径",    pv: "¥4.26/百万token" },
+};
+
+const CHANNEL_STYLES = {
+  popup:       { name: "只弹窗",      short: "仅弹窗", desc: "安静，只出现通知窗口",   icon: "🔇" },
+  popup_sound: { name: "弹窗 + 声音", short: "带响声", desc: "同时响一声系统提示音",   icon: "🔔" },
+};
+
+const styleChoices = { terminal_style: "log", price_unit: "auto", reminder_channel: "popup" };
+// 只有用户真的点过的项才提交。没点过的保持原样 ——
+// 否则重装时会把用户之前调好的风格冲成默认值。
+const touchedStyleKeys = new Set();
+
+function toggleStyle() {
+  document.getElementById('style-section').classList.toggle('open');
+}
+
+function updateStyleSum() {
+  document.getElementById('style-sum').textContent =
+    TERM_STYLES[styleChoices.terminal_style].short + ' · ' +
+    UNIT_STYLES[styleChoices.price_unit].short + ' · ' +
+    CHANNEL_STYLES[styleChoices.reminder_channel].short;
+}
+
+function makeCard(selected, name, desc, previewHtml) {
+  const el = document.createElement('div');
+  el.className = 'style-card' + (selected ? ' selected' : '');
+  el.innerHTML =
+    '<div class="nm"><span>' + name + '</span>' +
+    (selected ? '<span class="ck">✔</span>' : '') + '</div>' +
+    '<div class="ds">' + desc + '</div>' + previewHtml;
+  return el;
+}
+
+function renderStyles() {
+  // 1. 终端输出
+  const gTerm = document.getElementById('grid-term');
+  gTerm.innerHTML = '';
+  Object.entries(TERM_STYLES).forEach(([key, st]) => {
+    const sel = styleChoices.terminal_style === key;
+    const el = makeCard(sel, st.name, st.desc, '<div class="pv pv-term">' + st.lines + '</div>');
+    el.onclick = () => {
+      styleChoices.terminal_style = key;
+      touchedStyleKeys.add('terminal_style');
+      renderStyles();
+    };
+    gTerm.appendChild(el);
+  });
+
+  // 2. 价格单位
+  const gUnit = document.getElementById('grid-unit');
+  gUnit.innerHTML = '';
+  Object.entries(UNIT_STYLES).forEach(([key, st]) => {
+    const sel = styleChoices.price_unit === key;
+    const el = makeCard(sel, st.name, st.desc, '<div class="pv pv-unit">' + st.pv + '</div>');
+    el.onclick = () => {
+      styleChoices.price_unit = key;
+      touchedStyleKeys.add('price_unit');
+      renderStyles();
+    };
+    gUnit.appendChild(el);
+  });
+
+  // 3. 提醒方式
+  const gCh = document.getElementById('grid-channel');
+  gCh.innerHTML = '';
+  Object.entries(CHANNEL_STYLES).forEach(([key, st]) => {
+    const sel = styleChoices.reminder_channel === key;
+    const preview = '<div class="pv-sound"><span style="font-size:14px">' + st.icon + '</span>' +
+                    '<span>降价时' + (key === 'popup' ? '不发声' : '响一声') + '</span></div>';
+    const el = makeCard(sel, st.name, st.desc, preview);
+    el.onclick = () => {
+      styleChoices.reminder_channel = key;
+      touchedStyleKeys.add('reminder_channel');
+      renderStyles();
+    };
+    gCh.appendChild(el);
+  });
+
+  updateStyleSum();
+}
+
 // 把"提醒方式"翻译成后端认识的"版本"
 function reminderToEdition(reminder) {
   if (reminder === 'auto_popup') return 'desktop';
@@ -356,6 +560,13 @@ async function doInstall() {
     payload.cleanup = document.getElementById('both-cleanup').checked;
   }
 
+  // 风格：只提交用户真正点过的项，没点过的保持原值不动
+  if (touchedStyleKeys.size > 0) {
+    payload.style = {};
+    touchedStyleKeys.forEach(k => { payload.style[k] = styleChoices[k]; });
+    appendLog('>>> 风格：' + document.getElementById('style-sum').textContent);
+  }
+
   appendLog('>>> 开始安装：' + ({
     auto_popup: '自动弹窗提醒',
     workbuddy_chat: '在 WorkBuddy 里问它',
@@ -378,6 +589,9 @@ async function doInstall() {
       if (res.desktop_dir) appendLog('   自动弹窗程序: ' + res.desktop_dir);
       appendLog('   开机自动检查: ' + (res.startup ? '已开启 ✅' : '未开启'));
       appendLog('   共复制 ' + res.files.length + ' 个文件。');
+      if (res.configs && res.configs.length) {
+        appendLog('   🎨 风格已写入: ' + res.configs.join('  |  '));
+      }
       if (res.cleaned && (res.cleaned.zip || res.cleaned.unpacked_dir)) {
         appendLog('   🧹 已自动删除安装包: ' + ((res.cleaned.zip || '') + (res.cleaned.unpacked_dir ? ' (+ 解压文件夹)' : '')));
       }
@@ -387,6 +601,7 @@ async function doInstall() {
       if (res.install_dir) lines.push('   自动弹窗程序在: ' + res.install_dir);
       if (res.desktop_dir) lines.push('   自动弹窗程序在: ' + res.desktop_dir);
       if (res.cleaned && res.cleaned.zip) lines.push('   🧹 安装包已自动删除，桌面不留垃圾文件。');
+      if (res.configs && res.configs.length) lines.push('   🎨 风格已保存，装完就是这个样子，不用再手动设置。');
       setStatus(lines.join('\n'), 'ok');
     } else {
       appendLog('❌ 安装失败: ' + (data.error || '未知错误'));
